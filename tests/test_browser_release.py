@@ -198,19 +198,50 @@ def test_release_publishes_only_after_all_assets_verified(tmp_path, monkeypatch)
     monkeypatch.setattr(release, 'promote_images', lambda *args: promoted.append(args))
     calls = []
     draft = {'id': 5, 'draft': True, 'target_commitish': SHA, 'tag_name': 'v' + VERSION}
+
     def fake_run(*args, **kwargs):
         calls.append(args)
         if args[:2] == ('gh', 'api') and '/releases?per_page=' in args[-1]:
-            return json.dumps([[draft]]) if any(c[1:3] == ('release', 'create') for c in calls) else '[[]]'
+            # A listagem continua desatualizada logo após criar o rascunho.
+            return '[[]]'
+        if args[:4] == ('gh', 'api', '--method', 'POST'):
+            assert args[4] == f'repos/{REPO}/releases'
+            payload = json.loads(Path(args[6]).read_text(encoding='utf-8'))
+            assert payload['tag_name'] == 'v' + VERSION
+            assert payload['target_commitish'] == SHA and payload['draft'] is True
+            return json.dumps(draft)
         if args[:2] == ('gh', 'api') and args[-1].endswith('/releases/5'):
             return json.dumps({**draft, 'assets': [{'name': p.name, 'state': 'uploaded',
                 'size': p.stat().st_size, 'digest': 'sha256:' + release.checksum(p)} for p in assets]})
         return ''
+
     monkeypatch.setattr(release, 'run', fake_run)
     release.publish(REPO, 'refs/heads/main', SHA, VERSION, assets)
     assert promoted and calls[-1][:4] == ('gh', 'api', '--method', 'PATCH')
     assert 'draft=false' in calls[-1]
+    assert sum(1 for c in calls if c[:4] == ('gh', 'api', '--method', 'POST')) == 1
     assert any(c[1:3] == ('release', 'upload') for c in calls[:-1])
+
+
+def test_invalid_draft_creation_response_never_uploads(tmp_path, monkeypatch):
+    assets = make_assets(tmp_path)
+    monkeypatch.setattr(release, 'tag_sha', lambda *args: None)
+    monkeypatch.setattr(release, 'promote_images', lambda *args: None)
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append(args)
+        if '/releases?per_page=' in args[-1]:
+            return '[[]]'
+        if args[:4] == ('gh', 'api', '--method', 'POST'):
+            return json.dumps({'id': 9, 'draft': True, 'tag_name': 'v' + VERSION,
+                               'target_commitish': 'b' * 40})
+        raise AssertionError('Não deve fazer upload/publicação com metadados inválidos')
+
+    monkeypatch.setattr(release, 'run', fake_run)
+    with pytest.raises(RuntimeError, match='rascunho inválido'):
+        release.publish(REPO, 'refs/heads/main', SHA, VERSION, assets)
+    assert not any(c[1:3] == ('release', 'upload') for c in calls)
 
 
 def test_incomplete_remote_upload_keeps_release_draft(tmp_path, monkeypatch):

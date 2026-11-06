@@ -146,17 +146,22 @@ def publish(repository: str, ref: str, sha: str, version: str, assets: list[Path
                  "Baixe o ZIP Windows e extraia a pasta inteira; execute `ResellerManager.exe`. No Docker/Dockge, use o ZIP de deploy, que contém `compose.yaml` e `.env`. Os deploys referenciam a imagem do SHA testado.\n\n"
                  "A release só é publicada depois dos testes, builds nativos e abertura real do Chromium embarcado. Os arquivos SHA-256 acompanham cada ZIP.\n\n"
                  "Os contratos reais do kOfficePanel continuam sujeitos à homologação; esta release não comprova login ou renovação no fornecedor.\n")
+        # A resposta da criação contém o ID definitivo do rascunho.
+        # Não consultar imediatamente a listagem: drafts podem demorar a aparecer.
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "notes.md"
-            path.write_text(notes, encoding="utf-8")
-            command = ["gh", "release", "create", tag, "--repo", repository, "--target", sha,
-                       "--draft", "--title", f"Reseller Manager {version}", "--notes-file", str(path)]
-            if "-" in version:
-                command.append("--prerelease")
-            run(*command)
-        release = find_release(repository, tag)
-        if release is None:
-            raise RuntimeError("Rascunho criado não foi localizado; não publicar sem anexos")
+            path = Path(directory) / "release.json"
+            payload = {"tag_name": tag, "name": f"Reseller Manager {version}",
+                       "target_commitish": sha, "draft": True, "prerelease": "-" in version,
+                       "body": notes}
+            path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            release = json.loads(run("gh", "api", "--method", "POST",
+                                     f"repos/{repository}/releases", "--input", str(path)))
+        if (not isinstance(release, dict) or
+                type(release.get("id")) is not int or release["id"] <= 0 or
+                release.get("draft") is not True or
+                release.get("tag_name") != tag or
+                release.get("target_commitish") != sha):
+            raise RuntimeError("GitHub retornou rascunho inválido; não publicar sem anexos")
     # Only a draft may have its assets replaced while recovering an interrupted upload.
     run("gh", "release", "upload", tag, "--repo", repository, "--clobber", *(str(p.resolve()) for p in assets))
     current = json.loads(run("gh", "api", f"repos/{repository}/releases/{release['id']}"))
