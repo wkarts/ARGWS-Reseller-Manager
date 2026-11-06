@@ -1,47 +1,98 @@
 name: Container
 on:
+  workflow_call:
+    inputs:
+      publish:
+        description: Publish the tested images to GHCR
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish validated image to GHCR
+        description: Publish the tested images to GHCR (main/develop/version tag only)
         type: boolean
         default: false
 permissions:
   contents: read
-  packages: write
 concurrency:
   group: container-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   container:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        target: [runtime, browser]
+    env:
+      TARGET: ${{ matrix.target }}
+      PUBLISH: ${{ inputs.publish }}
+      TEST_IMAGE: reseller-manager-ci:${{ matrix.target }}
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Build and validate default container
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source before building or publishing
         run: |
-          docker compose config --quiet
-          docker compose up -d --build
-          for i in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:48190/health; then break; fi
-            sleep 2
-          done
-          curl --fail --silent http://127.0.0.1:48190/health
-          curl --fail --silent http://127.0.0.1:48190/docs > /dev/null
-      - name: Publish to GHCR
+          set -euo pipefail
+          python -m pip install -r requirements-dev.txt
+          node frontend/build.mjs --check
+          node --test tests/frontend-build.test.mjs
+          python -m pytest -q
+      - name: Resolve repository and release channel
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "$PUBLISH" = 'true' ]; then args+=(--require-publish); fi
+          python scripts/distribution.py --repository "$GITHUB_REPOSITORY" --ref "$GITHUB_REF" \
+            --sha "$GITHUB_SHA" --version "$(cat VERSION)" --target "$TARGET" \
+            --output build/distribution.json "${args[@]}"
+      - name: Build exact image to be tested and published
+        run: |
+          set -euo pipefail
+          docker build --target "$TARGET" --tag "$TEST_IMAGE" \
+            --build-arg SOURCE_URL="https://github.com/$GITHUB_REPOSITORY" \
+            --build-arg SOURCE_REVISION="$GITHUB_SHA" .
+      - name: Validate source-free Dockge deployment and persistence
+        run: python scripts/smoke_container.py --image "$TEST_IMAGE" --target "$TARGET"
+      - name: Package standalone compose.yaml and .env
+        run: |
+          set -euo pipefail
+          image="$(python -c 'import json; print(json.load(open("build/distribution.json"))["primary"])')"
+          args=()
+          if [ "$TARGET" = 'browser' ]; then args+=(--browser); fi
+          python scripts/package_deploy.py --image "$image" --source-sha "$GITHUB_SHA" "${args[@]}"
+      - name: Publish the exact tested image to GHCR
         if: inputs.publish
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
-          REPOSITORY: ${{ github.repository }}
         run: |
-          image="ghcr.io/$(printf '%s' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
-          version="$(cat VERSION)"
+          set -euo pipefail
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-          docker tag "reseller-manager:$version" "$image:$version"
-          docker push "$image:$version"
-      - name: Stop test stack
-        if: always()
-        run: docker compose down
+          unset GHCR_TOKEN
+          while IFS= read -r tag; do
+            docker tag "$TEST_IMAGE" "$tag"
+            docker push "$tag"
+          done < <(python -c 'import json; print("\n".join(json.load(open("build/distribution.json"))["tags"]))')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reseller-manager-deploy-${{ matrix.target }}
+          path: |
+            artifacts/*-deploy*.zip
+            artifacts/*-deploy*.sha256
+          if-no-files-found: error
+          retention-days: 14

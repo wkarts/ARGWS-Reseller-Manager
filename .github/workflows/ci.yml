@@ -3,6 +3,7 @@ on:
   pull_request:
   push:
     branches: [main, develop]
+    tags: ['v*']
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,6 +33,7 @@ jobs:
           node-version: '22'
       - run: python -m pip install -r requirements-dev.txt
       - run: node frontend/build.mjs --check
+      - run: node --test tests/frontend-build.test.mjs
       - run: python -m compileall -q app packaging scripts
       - run: python -m pytest -q --junitxml=build/test-results.xml
       - run: python scripts/smoke_runtime.py
@@ -41,3 +43,17 @@ jobs:
           name: tests-${{ matrix.os }}
           path: build/test-results.xml
           retention-days: 7
+  container:
+    needs: tests
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/container.yml
+    with:
+      # PR and manual validation never publish; only trusted push events do.
+      publish: ${{ github.event_name == 'push' }}
+  windows:
+    needs: tests
+    permissions:
+      contents: read
+    uses: ./.github/workflows/windows.yml

@@ -26,7 +26,7 @@ def main():
     if args.with_browser:
         env["PLAYWRIGHT_BROWSERS_PATH"]="0"
         subprocess.run([sys.executable,"-m","playwright","install","chromium"],env=env,cwd=ROOT,check=True)
-        command.extend(["--collect-all","playwright"])
+        command.extend(["--collect-all","playwright","--runtime-hook",str(ROOT/"packaging/browser_hook.py")])
     else: command.extend(["--exclude-module","playwright"])
     command.append(str(ROOT/"packaging/launcher.py"))
     subprocess.run(command,cwd=ROOT,env=env,check=True)

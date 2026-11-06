@@ -16,3 +16,5 @@ artifacts
 .env.*
 **/*.har
 node_modules
+deploy
+qa-results

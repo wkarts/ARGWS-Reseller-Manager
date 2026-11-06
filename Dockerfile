@@ -1,6 +1,10 @@
 # Python minor pinned; resolve the desired patch/digest in your deployment policy.
 FROM python:3.12-slim-bookworm AS runtime
-LABEL org.opencontainers.image.title="Reseller Manager" \
+ARG SOURCE_URL=https://github.com/wkarts/ARGWS-Reseller-Manager
+ARG SOURCE_REVISION=unknown
+LABEL org.opencontainers.image.source="${SOURCE_URL}" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      org.opencontainers.image.title="Reseller Manager" \
       org.opencontainers.image.description="FastAPI reseller bridge with verified contracts" \
       org.opencontainers.image.version="0.1.0"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \

@@ -1,3 +1,5 @@
+# Desenvolvimento local: build a partir do código-fonte.
+# Para GHCR/Dockge sem código-fonte, use deploy/compose.yaml e deploy/.env.example.
 services:
   data-init:
     image: reseller-manager:${RESMAN_VERSION:-0.1.0}

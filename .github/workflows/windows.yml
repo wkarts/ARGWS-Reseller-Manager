@@ -1,5 +1,13 @@
 name: Windows binary
 on:
+  workflow_call:
+    inputs:
+      with_browser:
+        type: boolean
+        default: false
+      onefile:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       with_browser:
@@ -10,8 +18,6 @@ on:
         description: Generate single executable
         type: boolean
         default: false
-  push:
-    tags: ['v*']
 permissions:
   contents: read
 concurrency:

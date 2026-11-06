@@ -58,9 +58,40 @@ No pacote portátil padrão, **distribua a pasta inteira**, não apenas o EXE. O
 
 **O ZIP desta entrega contém código-fonte e o processo de build, não um EXE Windows já compilado.** O ambiente de geração foi Linux, sem Windows/Wine. O build nativo foi preparado, mas não executado aqui. Workflow `.github/workflows/windows.yml` pode gerar o binário no runner Windows após publicação do repositório.
 
-## 3. Docker Compose
+## 3. Distribuição: GHCR/Dockge e build local
 
-Na raiz:
+### 3.1. Deploy pronto pelo GHCR — sem código-fonte
+
+Use **`deploy/compose.yaml`** e **`deploy/.env.example`**. O pacote de deploy gerado
+pelo workflow já inclui `compose.yaml` e `.env`, sem segredos e sem build local.
+
+```sh
+cd deploy
+cp .env.example .env
+# Ajuste imagem, porta e origem HTTPS no .env. A imagem deve estar publicada.
+docker compose pull
+docker compose up -d
+docker compose exec -T api cat /data/admin.token
+```
+
+O modelo do deploy permite acesso pela rede em `0.0.0.0:48190`; use firewall e
+proxy HTTPS. Para proxy no mesmo host, ajuste `RESMAN_BIND=127.0.0.1`.
+No Dockge, copie compose e variáveis para os editores da stack ou use sua pasta de stacks.
+Persistência em `./data`, healthcheck mantido, inicialização de permissões e API não-root.
+A variante `-browser` inclui Chromium e exige `RESMAN_BROWSER_ENABLED=1`.
+
+O workflow `Validate` testa Windows/Linux antes de construir as duas imagens e o
+executável Windows. Push em main/develop/tags publica imagens aprovadas no GHCR;
+PR apenas valida, sem publicar. Os artefatos de deploy e Windows ficam no Actions.
+Imagem: `ghcr.io/wkarts/argws-reseller-manager` (owner/repo calculados no workflow).
+Canais: `latest`, `develop`, versão em tags Git e `sha-...`, incluindo variantes `-browser`.
+Não há publicação de imagem ou geração de EXE comprovada até os workflows passarem.
+
+Guia completo, atualização e preservação dos dados: [deploy/README.md](deploy/README.md).
+
+### 3.2. Build Docker local — mantém o fluxo anterior
+
+Na raiz do código-fonte:
 
 ```sh
 cp .env.example .env
@@ -121,6 +152,6 @@ Node só é necessário para **alterar/recompilar o template Vue**, não para us
 
 Referências utilizáveis: `examples/reseller-manager.openapi.json` e `examples/reseller-manager.postman_collection.json` (API própria, não a coleção oficial kOfficePanel). O relatório desta entrega está em `qa-results/report.json`; imagens com dados sintéticos estão em `docs/capturas/`.
 
-Guia completo: [integração](docs/INTEGRACAO.md), [operação](docs/OPERACAO.md), [segurança](docs/SEGURANCA.md), [validação](docs/VALIDACAO.md), [reaproveitamento do modelo](docs/TEMPLATE.md).
+Guia completo: [deploy GHCR/Dockge](deploy/README.md), [integração](docs/INTEGRACAO.md), [operação](docs/OPERACAO.md), [segurança](docs/SEGURANCA.md), [validação](docs/VALIDACAO.md), [reaproveitamento do modelo](docs/TEMPLATE.md).
 
 Autoria: **Wallace Kleiton — wkarts@gmail.com — WWSoftware’s**. Nome técnico: `reseller-manager`. Nome comercial provisório: **Reseller Manager**. Não foi criado repositório, PR, merge, release ou deploy nesta entrega.
