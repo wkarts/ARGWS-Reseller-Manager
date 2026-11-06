@@ -36,7 +36,8 @@ jobs:
       - run: node --test tests/frontend-build.test.mjs
       - run: python -m compileall -q app packaging scripts
       - name: Prepare integrated browser for connection regression tests
-        run: python -m playwright install --with-deps chromium
+        timeout-minutes: 3
+        run: python -m playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} chromium
       - run: python -m pytest -q --junitxml=build/test-results.xml
         env:
           RESMAN_RUN_BROWSER_TESTS: '1' 
