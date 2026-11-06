@@ -10,6 +10,8 @@ import re
 import subprocess
 import tempfile
 import zipfile
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 from scripts.distribution import metadata, VERSION
 
@@ -122,6 +124,34 @@ def promote_images(repository: str, version: str, sha: str) -> None:
             raise RuntimeError("Digest promovido diverge da imagem testada")
 
 
+def upload_asset(repository: str, release_id: int, asset: Path) -> dict:
+    """Envia o binário diretamente pelo ID imutável do rascunho, sem lookup por tag."""
+    token = os.environ.get("GH_TOKEN")
+    if not token:
+        raise RuntimeError("GH_TOKEN indisponível para upload da release")
+    url = (f"https://uploads.github.com/repos/{repository}/releases/{release_id}/assets"
+           f"?name={quote(asset.name, safe='')}")
+    size = asset.stat().st_size
+    headers = {
+        "Authorization": "Bearer " + token,
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/octet-stream",
+        "Content-Length": str(size),
+        "User-Agent": "Reseller-Manager-Release",
+    }
+    with asset.open("rb") as stream:
+        request = Request(url, data=stream, headers=headers, method="POST")
+        with urlopen(request, timeout=600) as response:
+            if response.status != 201:
+                raise RuntimeError("Upload do GitHub não retornou HTTP 201")
+            uploaded = json.loads(response.read())
+    if (uploaded.get("name") != asset.name or uploaded.get("state") != "uploaded"
+            or uploaded.get("size") != size
+            or uploaded.get("digest", "sha256:" + checksum(asset)) != "sha256:" + checksum(asset)):
+        raise RuntimeError(f"Metadados do anexo divergentes: {asset.name}")
+    return uploaded
+
+
 def publish(repository: str, ref: str, sha: str, version: str, assets: list[Path]) -> None:
     if ref not in ("refs/heads/main", "refs/tags/v" + version):
         raise ValueError("Release permitida somente em main ou tag vVERSION, nunca em PR/develop")
@@ -146,19 +176,39 @@ def publish(repository: str, ref: str, sha: str, version: str, assets: list[Path
                  "Baixe o ZIP Windows e extraia a pasta inteira; execute `ResellerManager.exe`. No Docker/Dockge, use o ZIP de deploy, que contém `compose.yaml` e `.env`. Os deploys referenciam a imagem do SHA testado.\n\n"
                  "A release só é publicada depois dos testes, builds nativos e abertura real do Chromium embarcado. Os arquivos SHA-256 acompanham cada ZIP.\n\n"
                  "Os contratos reais do kOfficePanel continuam sujeitos à homologação; esta release não comprova login ou renovação no fornecedor.\n")
+        # A resposta da criação contém o ID definitivo do rascunho.
+        # Não consultar imediatamente a listagem: drafts podem demorar a aparecer.
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "notes.md"
-            path.write_text(notes, encoding="utf-8")
-            command = ["gh", "release", "create", tag, "--repo", repository, "--target", sha,
-                       "--draft", "--title", f"Reseller Manager {version}", "--notes-file", str(path)]
-            if "-" in version:
-                command.append("--prerelease")
-            run(*command)
-        release = find_release(repository, tag)
-        if release is None:
-            raise RuntimeError("Rascunho criado não foi localizado; não publicar sem anexos")
-    # Only a draft may have its assets replaced while recovering an interrupted upload.
-    run("gh", "release", "upload", tag, "--repo", repository, "--clobber", *(str(p.resolve()) for p in assets))
+            path = Path(directory) / "release.json"
+            payload = {"tag_name": tag, "name": f"Reseller Manager {version}",
+                       "target_commitish": sha, "draft": True, "prerelease": "-" in version,
+                       "body": notes}
+            path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            release = json.loads(run("gh", "api", "--method", "POST",
+                                     f"repos/{repository}/releases", "--input", str(path)))
+        if (not isinstance(release, dict) or
+                type(release.get("id")) is not int or release["id"] <= 0 or
+                release.get("draft") is not True or
+                release.get("tag_name") != tag or
+                release.get("target_commitish") != sha):
+            raise RuntimeError("GitHub retornou rascunho inválido; não publicar sem anexos")
+    # Somente o ID do rascunho é usado nos uploads, inclusive imediatamente após
+    # a criação, quando uma busca por tag pode retornar 404.
+    current = json.loads(run("gh", "api", f"repos/{repository}/releases/{release['id']}"))
+    if (current.get("id") != release["id"] or current.get("draft") is not True
+            or current.get("tag_name") != tag or current.get("target_commitish") != sha):
+        raise RuntimeError("Rascunho alterado durante a publicação; interrompendo")
+    remote_assets = {item["name"]: item for item in current.get("assets", [])}
+    for path in assets:
+        previous = remote_assets.get(path.name)
+        expected_digest = "sha256:" + checksum(path)
+        if previous and previous.get("state") == "uploaded" and previous.get("size") == path.stat().st_size and previous.get("digest") == expected_digest:
+            continue
+        if previous:
+            if type(previous.get("id")) is not int or previous["id"] <= 0:
+                raise RuntimeError(f"ID inválido no anexo existente: {path.name}")
+            run("gh", "api", "--method", "DELETE", f"repos/{repository}/releases/assets/{previous['id']}")
+        upload_asset(repository, release["id"], path)
     current = json.loads(run("gh", "api", f"repos/{repository}/releases/{release['id']}"))
     if not current["draft"]:
         raise RuntimeError("A release mudou durante o upload; interrompendo")

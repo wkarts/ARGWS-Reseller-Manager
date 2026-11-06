@@ -95,6 +95,18 @@ def test_all_container_targets_include_chromium():
     assert 'if args.target == "browser":' not in smoke
 
 
+def test_ci_downloads_chromium_without_apt_on_hosted_runners():
+    # The native Docker build still installs Linux dependencies in its image;
+    # CI host runners must not block on apt downloads of optional font packs.
+    ci = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+    steps = ci["jobs"]["tests"]["steps"]
+    install = next(s for s in steps if s.get("name") == "Prepare integrated browser for connection regression tests")
+    assert install["run"] == "python -m playwright install chromium"
+    assert int(install["timeout-minutes"]) >= 5
+    pytest_step = next(s for s in steps if "python -m pytest -q" in s.get("run", ""))
+    assert pytest_step["env"]["RESMAN_RUN_BROWSER_TESTS"] == "1"
+
+
 def test_windows_always_bundles_and_tests_browser_before_archive():
     build = (ROOT / "packaging/build_windows.py").read_text()
     assert '"--exclude-module","playwright"' not in build
@@ -196,27 +208,63 @@ def test_release_publishes_only_after_all_assets_verified(tmp_path, monkeypatch)
     monkeypatch.setattr(release, 'tag_sha', lambda *args: None)
     promoted = []
     monkeypatch.setattr(release, 'promote_images', lambda *args: promoted.append(args))
+    uploads = []
+    monkeypatch.setattr(release, 'upload_asset', lambda repo, release_id, path: uploads.append((release_id, path.name)))
     calls = []
     draft = {'id': 5, 'draft': True, 'target_commitish': SHA, 'tag_name': 'v' + VERSION}
+
     def fake_run(*args, **kwargs):
         calls.append(args)
         if args[:2] == ('gh', 'api') and '/releases?per_page=' in args[-1]:
-            return json.dumps([[draft]]) if any(c[1:3] == ('release', 'create') for c in calls) else '[[]]'
+            # A listagem continua desatualizada logo após criar o rascunho.
+            return '[[]]'
+        if args[:4] == ('gh', 'api', '--method', 'POST'):
+            assert args[4] == f'repos/{REPO}/releases'
+            payload = json.loads(Path(args[6]).read_text(encoding='utf-8'))
+            assert payload['tag_name'] == 'v' + VERSION
+            assert payload['target_commitish'] == SHA and payload['draft'] is True
+            return json.dumps(draft)
         if args[:2] == ('gh', 'api') and args[-1].endswith('/releases/5'):
-            return json.dumps({**draft, 'assets': [{'name': p.name, 'state': 'uploaded',
-                'size': p.stat().st_size, 'digest': 'sha256:' + release.checksum(p)} for p in assets]})
+            return json.dumps({**draft, 'assets': ([{'name': p.name, 'state': 'uploaded',
+                'size': p.stat().st_size, 'digest': 'sha256:' + release.checksum(p)}
+                for p in assets] if uploads else [])})
         return ''
+
     monkeypatch.setattr(release, 'run', fake_run)
     release.publish(REPO, 'refs/heads/main', SHA, VERSION, assets)
     assert promoted and calls[-1][:4] == ('gh', 'api', '--method', 'PATCH')
     assert 'draft=false' in calls[-1]
-    assert any(c[1:3] == ('release', 'upload') for c in calls[:-1])
+    assert sum(1 for c in calls if c[:4] == ('gh', 'api', '--method', 'POST')) == 1
+    assert len(uploads) == len(assets) and all(ident == 5 for ident, _ in uploads)
+    assert not any(c[1:3] == ('release', 'upload') for c in calls)
+
+
+def test_invalid_draft_creation_response_never_uploads(tmp_path, monkeypatch):
+    assets = make_assets(tmp_path)
+    monkeypatch.setattr(release, 'tag_sha', lambda *args: None)
+    monkeypatch.setattr(release, 'promote_images', lambda *args: None)
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append(args)
+        if '/releases?per_page=' in args[-1]:
+            return '[[]]'
+        if args[:4] == ('gh', 'api', '--method', 'POST'):
+            return json.dumps({'id': 9, 'draft': True, 'tag_name': 'v' + VERSION,
+                               'target_commitish': 'b' * 40})
+        raise AssertionError('Não deve fazer upload/publicação com metadados inválidos')
+
+    monkeypatch.setattr(release, 'run', fake_run)
+    with pytest.raises(RuntimeError, match='rascunho inválido'):
+        release.publish(REPO, 'refs/heads/main', SHA, VERSION, assets)
+    assert not any(c[1:3] == ('release', 'upload') for c in calls)
 
 
 def test_incomplete_remote_upload_keeps_release_draft(tmp_path, monkeypatch):
     assets = make_assets(tmp_path)
     monkeypatch.setattr(release, 'tag_sha', lambda *args: SHA)
     monkeypatch.setattr(release, 'promote_images', lambda *args: None)
+    monkeypatch.setattr(release, 'upload_asset', lambda *args: {})
     calls = []
     def fake_run(*args, **kwargs):
         calls.append(args)

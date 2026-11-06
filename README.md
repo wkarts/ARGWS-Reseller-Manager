@@ -1,4 +1,4 @@
-# Reseller Manager — 0.1.0
+# Reseller Manager — 0.1.2
 
 Ferramenta própria de revendas em **Python/FastAPI**, adaptada do modelo `escrituracao-contabil-0.3.0-dev.9.1.zip` fornecido por Wallace. Painel web Vue local, API REST, eventos WebSocket, fila persistente SQLite, credenciais criptografadas, execução Docker e projeto de executável gráfico Windows x64.
 

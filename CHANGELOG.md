@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Corrige a publicação de releases: usa o ID retornado ao criar o rascunho e também no upload direto dos anexos, sem consultas imediatas por tag sujeitas a atraso de propagação.
+- Mantém validação de SHA/versão, integridade dos seis anexos e publicação somente após build Windows e Docker aprovados.
+- Adiciona testes para listagem de rascunhos desatualizada e rejeição de metadados inválidos, sem alterar funcionalidades do Reseller Manager.
+
 ## 0.1.1
 
 - Edição de conexões e credenciais sem apagar campos vazios.
