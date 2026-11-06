@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- Edição de conexões e credenciais sem apagar campos vazios.
+- Exclusão local completa, com confirmação, revisão e isolamento.
+- Login com descoberta de formulário/CSRF, redirecionamentos HTML e diagnóstico TLS/rede.
+- Navegador sem bloqueio por success_selector vazio; confirmação positiva de sessão.
+- Testes reais de navegador em Windows/Linux; Chromium distribuído preservado.
+
 ## 0.1.0 — 2026-11-06
 
 Primeira implementação do Reseller Manager baseada na estrutura do template fornecido. API FastAPI, UI Vue local, executor HTTP por contrato, autenticação por token/formulário e navegador opcional, fila SQLite, idempotência, proteção de segredos, agendamentos, eventos, Postman/HAR, Docker e build Windows x64.

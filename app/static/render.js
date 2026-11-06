@@ -1,7 +1,7 @@
 /* Template pré-compilado; não requer eval ou CDN. */
 var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
   with (_ctx) {
-    const { createElementVNode: _createElementVNode, createTextVNode: _createTextVNode, vModelText: _vModelText, withDirectives: _withDirectives, toDisplayString: _toDisplayString, openBlock: _openBlock, createElementBlock: _createElementBlock, createCommentVNode: _createCommentVNode, withModifiers: _withModifiers, renderList: _renderList, Fragment: _Fragment, normalizeClass: _normalizeClass, vModelSelect: _vModelSelect, vShow: _vShow, withKeys: _withKeys, vModelCheckbox: _vModelCheckbox } = _Vue
+    const { createElementVNode: _createElementVNode, createTextVNode: _createTextVNode, vModelText: _vModelText, withDirectives: _withDirectives, toDisplayString: _toDisplayString, openBlock: _openBlock, createElementBlock: _createElementBlock, createCommentVNode: _createCommentVNode, withModifiers: _withModifiers, renderList: _renderList, Fragment: _Fragment, normalizeClass: _normalizeClass, vModelSelect: _vModelSelect, vShow: _vShow, vModelCheckbox: _vModelCheckbox, withKeys: _withKeys } = _Vue
 
     return (_openBlock(), _createElementBlock("div", null, [(!authenticated)
       ? (_openBlock(), _createElementBlock("div", {
@@ -12,7 +12,7 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
           _createElementVNode("h1", null, [_createTextVNode("Conecte. Gerencie."), _createElementVNode("br"), _createTextVNode("Renove com controle.")]),
           _createElementVNode("p", null, "Uma API própria para integrar sua carteira, organizar renovações e acompanhar cada operação."),
           _createElementVNode("div", { class: "auth-feature" }, "Sessões protegidas · Histórico persistente · Contratos verificáveis")
-        ]), _createElementVNode("footer", null, "WWSoftware’s · Wallace Kleiton · v0.1.0")]), _createElementVNode("section", { class: "auth-panel" }, [_createElementVNode("form", {
+        ]), _createElementVNode("footer", null, "WWSoftware’s · Wallace Kleiton · v0.1.1")]), _createElementVNode("section", { class: "auth-panel" }, [_createElementVNode("form", {
           class: "auth-form",
           onSubmit: _withModifiers(login, ["prevent"])
         }, [
@@ -74,7 +74,7 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
             _createElementVNode("span", { class: _normalizeClass(['signal',socketOnline?'online':'']) }, null, 2),
             _createTextVNode(_toDisplayString(socketOnline?'Eventos em tempo real':'Reconectando eventos'), 1),
             _createElementVNode("br"),
-            _createElementVNode("small", null, "v0.1.0 · " + _toDisplayString(user.scope), 1)
+            _createElementVNode("small", null, "v0.1.1 · " + _toDisplayString(user.scope), 1)
           ])
         ]), _createElementVNode("div", { class: "sidebar-footer" }, [_createElementVNode("span", null, "WWSoftware’s"), _createElementVNode("small", null, "Integrações sob seu controle")])], 2), _createElementVNode("div", { class: "main-area" }, [_createElementVNode("header", { class: "topbar" }, [_createElementVNode("div", { class: "actions" }, [_createElementVNode("button", {
           class: "icon-button mobile-menu",
@@ -248,38 +248,206 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
                   }, "Cancelar", 8, ["onClick"])])
                 ], 40, ["onSubmit"]))
               : _createCommentVNode("", true),
+            (editor && isAdmin)
+              ? (_openBlock(), _createElementBlock("form", {
+                  key: 1,
+                  id: "connection-editor",
+                  class: "panel padded spaced",
+                  onSubmit: _withModifiers(saveConnection, ["prevent"])
+                }, [
+                  _createElementVNode("h2", null, "Editar conexão"),
+                  _createElementVNode("p", { class: "muted small" }, "Credenciais em branco são preservadas. Ao mudar o endereço, as credenciais anteriores são removidas por segurança. A edição invalida a sessão, limpa o cache de clientes, cancela operações na fila e pausa agendamentos."),
+                  _createElementVNode("div", { class: "form-grid" }, [
+                    _createElementVNode("label", { class: "field" }, [_createTextVNode("Nome da conexão"), _withDirectives(_createElementVNode("input", {
+                      "onUpdate:modelValue": $event => ((editor.name) = $event),
+                      required: "",
+                      maxlength: "100"
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.name]])]),
+                    _createElementVNode("label", { class: "field" }, [_createTextVNode("Endereço do painel"), _withDirectives(_createElementVNode("input", {
+                      "onUpdate:modelValue": $event => ((editor.base_url) = $event),
+                      type: "url",
+                      required: ""
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.base_url]])]),
+                    _createElementVNode("label", { class: "field" }, [_createTextVNode("Modo de autenticação"), _withDirectives(_createElementVNode("select", { "onUpdate:modelValue": $event => ((editor.auth_mode) = $event) }, [_createElementVNode("option", { value: "browser" }, "Login com navegador integrado"), _createElementVNode("option", { value: "form" }, "Login por formulário HTTP"), _createElementVNode("option", { value: "token" }, "Token da API pública")], 8, ["onUpdate:modelValue"]), [[_vModelSelect, editor.auth_mode]])]),
+                    _createElementVNode("label", { class: "field" }, [_createTextVNode("Novo usuário"), _withDirectives(_createElementVNode("input", {
+                      "onUpdate:modelValue": $event => ((editor.credentials.username) = $event),
+                      autocomplete: "off",
+                      placeholder: "Vazio: manter o atual"
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.credentials.username]])]),
+                    _createElementVNode("label", { class: "field" }, [_createTextVNode("Nova senha"), _withDirectives(_createElementVNode("input", {
+                      "onUpdate:modelValue": $event => ((editor.credentials.password) = $event),
+                      type: "password",
+                      autocomplete: "new-password",
+                      placeholder: "Vazio: manter a atual"
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.credentials.password]])]),
+                    _createElementVNode("label", { class: "field" }, [_createTextVNode("Novo token"), _withDirectives(_createElementVNode("input", {
+                      "onUpdate:modelValue": $event => ((editor.credentials.token) = $event),
+                      type: "password",
+                      autocomplete: "off",
+                      placeholder: "Vazio: manter o atual"
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.credentials.token]])])
+                  ]),
+                  _createElementVNode("details", { class: "spaced" }, [
+                    _createElementVNode("summary", null, "Configuração de login e token"),
+                    _createElementVNode("p", { class: "muted small" }, "Detecção automática quando os nomes estiverem vazios. O seletor de sucesso é opcional quando uma consulta autenticada ou a página do painel confirma a sessão."),
+                    _createElementVNode("div", { class: "form-grid" }, [
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Página de login"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.login.page) = $event),
+                        placeholder: "/login/",
+                        required: ""
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.page]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Seletor do formulário"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.login.form_selector) = $event),
+                        placeholder: "form"
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.form_selector]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Nome do campo usuário"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.login.username_field) = $event),
+                        placeholder: "Automático"
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.username_field]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Nome do campo senha"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.login.password_field) = $event),
+                        placeholder: "Automático"
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.password_field]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Seletor do usuário"), _withDirectives(_createElementVNode("input", { "onUpdate:modelValue": $event => ((editor.login.username_selector) = $event) }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.username_selector]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Seletor da senha"), _withDirectives(_createElementVNode("input", { "onUpdate:modelValue": $event => ((editor.login.password_selector) = $event) }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.password_selector]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Seletor do botão entrar"), _withDirectives(_createElementVNode("input", { "onUpdate:modelValue": $event => ((editor.login.submit_selector) = $event) }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.submit_selector]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Seletor de sucesso (opcional)"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.login.success_selector) = $event),
+                        placeholder: "Automático / consulta autenticada"
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.login.success_selector]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Local do token"), _withDirectives(_createElementVNode("select", { "onUpdate:modelValue": $event => ((editor.token_auth.location) = $event) }, [_createElementVNode("option", { value: "header" }, "Cabeçalho"), _createElementVNode("option", { value: "query" }, "Parâmetro da URL"), _createElementVNode("option", { value: "body" }, "Corpo")], 8, ["onUpdate:modelValue"]), [[_vModelSelect, editor.token_auth.location]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Nome do token"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.token_auth.name) = $event),
+                        placeholder: "Conforme o contrato da API"
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.token_auth.name]])]),
+                      _createElementVNode("label", { class: "field" }, [_createTextVNode("Prefixo do token"), _withDirectives(_createElementVNode("input", {
+                        "onUpdate:modelValue": $event => ((editor.token_auth.prefix) = $event),
+                        placeholder: "Conforme o contrato da API"
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, editor.token_auth.prefix]])])
+                    ]),
+                    _createElementVNode("p", { class: "muted small" }, "Limpar credenciais explicitamente:"),
+                    _createElementVNode("div", { class: "actions wrap" }, [_createElementVNode("label", { class: "check" }, [_withDirectives(_createElementVNode("input", {
+                      type: "checkbox",
+                      value: "username",
+                      "onUpdate:modelValue": $event => ((editor.clear_credentials) = $event)
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelCheckbox, editor.clear_credentials]]), _createTextVNode("Remover usuário salvo")]), _createElementVNode("label", { class: "check" }, [_withDirectives(_createElementVNode("input", {
+                      type: "checkbox",
+                      value: "password",
+                      "onUpdate:modelValue": $event => ((editor.clear_credentials) = $event)
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelCheckbox, editor.clear_credentials]]), _createTextVNode("Remover senha salva")]), _createElementVNode("label", { class: "check" }, [_withDirectives(_createElementVNode("input", {
+                      type: "checkbox",
+                      value: "token",
+                      "onUpdate:modelValue": $event => ((editor.clear_credentials) = $event)
+                    }, null, 8, ["onUpdate:modelValue"]), [[_vModelCheckbox, editor.clear_credentials]]), _createTextVNode("Remover token salvo")])])
+                  ]),
+                  _createElementVNode("div", { class: "actions spaced" }, [_createElementVNode("button", {
+                    class: "btn primary",
+                    disabled: busy
+                  }, "Salvar alterações", 8, ["disabled"]), _createElementVNode("button", {
+                    type: "button",
+                    class: "btn secondary",
+                    onClick: $event => (editor=null),
+                    disabled: busy
+                  }, "Cancelar edição", 8, ["onClick", "disabled"])])
+                ], 40, ["onSubmit"]))
+              : _createCommentVNode("", true),
+            (deleteTarget && isAdmin)
+              ? (_openBlock(), _createElementBlock("form", {
+                  key: 2,
+                  id: "connection-delete",
+                  class: "panel padded spaced",
+                  onSubmit: _withModifiers(removeConnection, ["prevent"])
+                }, [
+                  _createElementVNode("h2", null, "Excluir conexão definitivamente"),
+                  _createElementVNode("p", null, [_createTextVNode("Esta ação remove "), _createElementVNode("strong", null, _toDisplayString(deleteTarget.name), 1), _createTextVNode(", suas credenciais, sessão, perfil, cache de clientes, operações, agendamentos e eventos locais. Tokens restritos são ajustados ou revogados. Não exclui contas no fornecedor nem altera backups externos.")]),
+                  _createElementVNode("p", { class: "notice spaced" }, "Clientes em cache: " + _toDisplayString(deleteTarget.impact.clients) + " · Operações: " + _toDisplayString(deleteTarget.impact.operations) + " · Agendamentos: " + _toDisplayString(deleteTarget.impact.schedules) + " · Eventos: " + _toDisplayString(deleteTarget.impact.events) + " · Entregas de webhook: " + _toDisplayString(deleteTarget.impact.deliveries), 1),
+                  (deleteTarget.impact.running)
+                    ? (_openBlock(), _createElementBlock("p", {
+                        key: 0,
+                        class: "feedback error"
+                      }, "Há uma operação em execução. Aguarde sua conclusão antes de excluir."))
+                    : _createCommentVNode("", true),
+                  (deleteTarget.impact.uncertain)
+                    ? (_openBlock(), _createElementBlock("label", {
+                        key: 1,
+                        class: "check spaced"
+                      }, [_withDirectives(_createElementVNode("input", {
+                        type: "checkbox",
+                        "onUpdate:modelValue": $event => ((deleteUncertain) = $event)
+                      }, null, 8, ["onUpdate:modelValue"]), [[_vModelCheckbox, deleteUncertain]]), _createTextVNode("Reconheço que há operações incertas e confirmo a perda do histórico local. A exclusão não desfaz cobranças no fornecedor.")]))
+                    : _createCommentVNode("", true),
+                  _createElementVNode("label", { class: "field" }, [_createTextVNode("Digite o nome exato da conexão"), _withDirectives(_createElementVNode("input", {
+                    "onUpdate:modelValue": $event => ((deleteName) = $event),
+                    autocomplete: "off",
+                    required: ""
+                  }, null, 8, ["onUpdate:modelValue"]), [[_vModelText, deleteName]])]),
+                  _createElementVNode("div", { class: "actions spaced" }, [_createElementVNode("button", {
+                    class: "btn danger",
+                    disabled: busy || deleteName!==deleteTarget.name || deleteTarget.impact.running>0 || (deleteTarget.impact.uncertain>0 && !deleteUncertain)
+                  }, "Excluir definitivamente", 8, ["disabled"]), _createElementVNode("button", {
+                    type: "button",
+                    class: "btn secondary",
+                    onClick: $event => (deleteTarget=null),
+                    disabled: busy
+                  }, "Cancelar exclusão", 8, ["onClick", "disabled"])])
+                ], 40, ["onSubmit"]))
+              : _createCommentVNode("", true),
             _createElementVNode("div", { class: "connection-grid spaced" }, [(_openBlock(true), _createElementBlock(_Fragment, null, _renderList(connections, (c) => {
-              return (_openBlock(), _createElementBlock("article", { class: _normalizeClass(["panel padded", {selectedCard:c.id===connectionId}]) }, [_createElementVNode("div", { class: "actions" }, [_createElementVNode("div", { class: "connection-avatar" }, "↔"), _createElementVNode("div", { class: "grow" }, [_createElementVNode("h2", null, _toDisplayString(c.name), 1), _createElementVNode("p", { class: "muted small" }, _toDisplayString(c.base_url), 1)]), _createElementVNode("span", { class: _normalizeClass(["badge", {warning:c.status!=='authenticated'}]) }, _toDisplayString(statusLabel(c.status)), 3)]), _createElementVNode("div", { class: "connection-meta" }, [_createElementVNode("span", null, _toDisplayString(c.auth_mode), 1), _createElementVNode("span", null, "Perfil r" + _toDisplayString(c.revision), 1)]), _createElementVNode("button", {
-                class: "btn secondary full",
-                onClick: $event => {connectionId=c.id;changeConnection()}
-              }, _toDisplayString(c.id===connectionId?'Conexão selecionada':'Selecionar conexão'), 9, ["onClick"])], 2))
+              return (_openBlock(), _createElementBlock("article", { class: _normalizeClass(["panel padded", {selectedCard:c.id===connectionId}]) }, [
+                _createElementVNode("div", { class: "actions" }, [_createElementVNode("div", { class: "connection-avatar" }, "↔"), _createElementVNode("div", { class: "grow" }, [_createElementVNode("h2", null, _toDisplayString(c.name), 1), _createElementVNode("p", { class: "muted small" }, _toDisplayString(c.base_url), 1)]), _createElementVNode("span", { class: _normalizeClass(["badge", {warning:c.status!=='authenticated'}]) }, _toDisplayString(statusLabel(c.status)), 3)]),
+                _createElementVNode("div", { class: "connection-meta" }, [_createElementVNode("span", null, _toDisplayString(c.auth_mode), 1), _createElementVNode("span", null, "Perfil r" + _toDisplayString(c.revision), 1)]),
+                _createElementVNode("button", {
+                  class: "btn secondary full",
+                  onClick: $event => {connectionId=c.id;changeConnection()}
+                }, _toDisplayString(c.id===connectionId?'Conexão selecionada':'Selecionar conexão'), 9, ["onClick"]),
+                isAdmin
+                  ? (_openBlock(), _createElementBlock("div", {
+                      key: 0,
+                      class: "actions spaced connection-card-actions"
+                    }, [_createElementVNode("button", {
+                      class: "btn secondary",
+                      onClick: $event => (beginEditConnection(c)),
+                      disabled: busy
+                    }, "Editar", 8, ["onClick", "disabled"]), _createElementVNode("button", {
+                      class: "btn danger",
+                      onClick: $event => (beginDeleteConnection(c)),
+                      disabled: busy
+                    }, "Excluir conexão", 8, ["onClick", "disabled"])]))
+                  : _createCommentVNode("", true)
+              ], 2))
             }), 256))]),
             (!connections.length)
               ? (_openBlock(), _createElementBlock("div", {
-                  key: 1,
+                  key: 3,
                   class: "panel empty spaced"
                 }, [_createElementVNode("h3", null, "Nenhuma conexão cadastrada"), _createElementVNode("p", null, "Seu banco está vazio. Nenhum cliente ou dado de demonstração foi misturado ao ambiente.")]))
               : _createCommentVNode("", true),
             loginInspection
               ? (_openBlock(), _createElementBlock("div", {
-                  key: 2,
+                  key: 4,
                   class: "panel padded spaced"
-                }, [_createElementVNode("h2", null, "Formulário observado — somente leitura"), _createElementVNode("p", { class: "muted" }, [
-                  _createTextVNode("Copie os nomes reais para "),
-                  _createElementVNode("code", null, "login.username_field"),
-                  _createTextVNode(" e "),
-                  _createElementVNode("code", null, "login.password_field"),
-                  _createTextVNode(" no perfil.")
-                ]), _createElementVNode("pre", null, _toDisplayString(pretty(loginInspection)), 1)]))
+                }, [
+                  _createElementVNode("h2", null, "Formulário observado — somente leitura"),
+                  _createElementVNode("p", { class: "muted" }, "Os nomes podem ser detectados automaticamente. A sugestão não contém valores de CSRF, cookies ou credenciais."),
+                  (loginInspection.suggested_login && isAdmin)
+                    ? (_openBlock(), _createElementBlock("button", {
+                        key: 0,
+                        class: "btn secondary",
+                        onClick: applyLoginSuggestion,
+                        disabled: busy
+                      }, "Aplicar campos detectados", 8, ["onClick", "disabled"]))
+                    : _createCommentVNode("", true),
+                  _createElementVNode("pre", null, _toDisplayString(pretty(loginInspection)), 1)
+                ]))
               : _createCommentVNode("", true),
             (activeConnection && isAdmin)
               ? (_openBlock(), _createElementBlock("form", {
-                  key: 3,
+                  key: 5,
                   class: "panel padded spaced",
                   onSubmit: _withModifiers(saveCredentials, ["prevent"])
                 }, [
-                  _createElementVNode("h2", null, "Substituir credenciais da conexão ativa"),
-                  _createElementVNode("p", { class: "muted small" }, "Substitui o conjunto inteiro e invalida a sessão local. Dados atuais nunca são exibidos."),
+                  _createElementVNode("h2", null, "Atualizar credenciais da conexão ativa"),
+                  _createElementVNode("p", { class: "muted small" }, "Somente campos preenchidos são alterados. Campos vazios mantêm os valores salvos. A sessão será invalidada; para remover um valor, use Editar."),
                   _createElementVNode("div", { class: "form-grid" }, [_createElementVNode("label", { class: "field" }, [_createTextVNode("Usuário"), _withDirectives(_createElementVNode("input", {
                     "onUpdate:modelValue": $event => ((credentialForm.username) = $event),
                     autocomplete: "off"
@@ -754,7 +922,7 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
               _createElementVNode("code", null, "docs/TEMPLATE.md")
             ])
           ], 512), [[_vShow, page==='documentation']]),
-          _createElementVNode("footer", { class: "content-footer" }, [_createElementVNode("span", null, "Reseller Manager · v0.1.0"), _createElementVNode("span", null, "Wallace Kleiton — WWSoftware’s")])
+          _createElementVNode("footer", { class: "content-footer" }, [_createElementVNode("span", null, "Reseller Manager · v0.1.1"), _createElementVNode("span", null, "Wallace Kleiton — WWSoftware’s")])
         ])])]))]))
   }
 };

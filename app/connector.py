@@ -11,6 +11,7 @@ import httpx
 from .errors import BridgeError
 from .models import Profile, Endpoint, READ_ACTIONS, WRITE_ACTIONS
 from .network import NetworkPolicy, limited_request
+from . import login_support
 
 TOKEN = re.compile(r"\{\{(input|secret|session)\.([\w.-]+)\}\}")
 
@@ -44,9 +45,7 @@ def render(value, ctx, path=False):
 
 
 def looks_like_login(response):
-    # HTTP 200 with HTML login is an auth failure, never a successful API result.
-    text = response.text[:250_000].lower()
-    return ("text/html" in response.headers.get("content-type", "").lower() and any(x in text for x in ('type="password"', "type='password'", "/login/", "window.location", "http-equiv=\"refresh\"")))
+    return login_support.is_login_response(response)
 
 
 def save_cookies(client):
@@ -71,7 +70,7 @@ class Connector:
     def lock(self, identifier): return self.locks.setdefault(identifier, asyncio.Lock())
 
     def client(self, connection):
-        client = httpx.AsyncClient(timeout=httpx.Timeout(self.settings.request_timeout), follow_redirects=False, trust_env=False, transport=self.transport, headers={"User-Agent": "ResellerManager/0.1.0", "Accept": "application/json, text/html;q=0.8"})
+        client = httpx.AsyncClient(timeout=httpx.Timeout(self.settings.request_timeout), verify=login_support.tls_context(), follow_redirects=False, trust_env=False, transport=self.transport, headers={"User-Agent": connection["session"].get("user_agent") or "ResellerManager/0.1.1", "Accept": "application/json, text/html;q=0.8"})
         load_cookies(client, connection["session"].get("cookies", []), urlsplit(connection["base_url"]).hostname)
         return client
 
@@ -191,126 +190,13 @@ class Connector:
                     raise
 
     async def login_page(self, c, client):
-        profile = Profile.model_validate(c["profile"])
-        url = self.policy.relative_url(c["base_url"], profile.login.page)
-        for _ in range(4):
-            await self.policy.validate(url)
-            response = await limited_request(client, self.settings, "GET", url)
-            if response.is_redirect:
-                url = self.policy.same_origin(c["base_url"], response.headers.get("location", "/")); continue
-            if response.status_code >= 400: raise BridgeError("login_unavailable", f"Página de login retornou HTTP {response.status_code}.", 502)
-            return response, profile
-        raise BridgeError("too_many_redirects", "Muitos redirecionamentos no login.", 502)
+        return await login_support.login_page(self, c, client)
 
     async def inspect_login(self, identifier):
-        async with self.lock(identifier):
-            c = self.store.connection(identifier, True)
-            try:
-                async with self.client(c) as client:
-                    response, profile = await self.login_page(c, client)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    forms = []
-                    for form in soup.select("form"):
-                        action = self.policy.same_origin(c["base_url"], form.get("action") or str(response.url))
-                        forms.append({"method": form.get("method", "GET").upper(), "action_path": urlsplit(action).path, "fields": [{"name": i.get("name"), "type": i.get("type", "text")} for i in form.select("input[name],select[name],textarea[name]")]})
-                    return {"forms": forms, "note": "Somente leitura. Nenhum valor oculto ou cookie é retornado."}
-            except httpx.HTTPError as exc: raise BridgeError("login_unavailable", "Não foi possível consultar a página de login.", 502) from exc
+        return await login_support.inspect_login(self, identifier)
 
     async def connect(self, identifier):
-        c = self.store.connection(identifier, True)
-        if c["auth_mode"] == "token":
-            result = await self.execute(identifier, "list_clients", {"start": 0, "length": 1, "search": "", "draw": 1})
-            return {"status": "authenticated", "probe": result}
-        if c["auth_mode"] == "browser": return await self.browser_login(identifier)
-        async with self.lock(identifier):
-            try:
-                async with self.client(c) as client:
-                    response, profile = await self.login_page(c, client)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    candidates = soup.select(profile.login.form_selector)
-                    form = next((x for x in candidates if x.select_one('input[type="password"]')), None)
-                    if form is None: raise BridgeError("login_form_missing", "Formulário não identificado. Revise seletores ou use o modo navegador.", 409)
-                    action = self.policy.same_origin(c["base_url"], form.get("action") or str(response.url))
-                    if form.get("method", "GET").upper() != "POST": raise BridgeError("login_method_unverified", "O formulário não declara POST. Revise o contrato sem enviar senha na URL.", 409)
-                    username = profile.login.username_field
-                    password = profile.login.password_field
-                    if not username or not password:
-                        raise BridgeError("login_fields_required", "Use Inspecionar login e configure os nomes reais dos campos usuário e senha no perfil.", 409)
-                    names = {i.get("name") for i in form.select("input[name]")}
-                    if username not in names or password not in names: raise BridgeError("login_fields_changed", "Campos configurados não encontrados no formulário atual.", 409)
-                    if not c["credentials"].get("username") or not c["credentials"].get("password"): raise BridgeError("credentials_missing", "Configure usuário e senha da sua conta.", 409)
-                    hidden = {i["name"]: i.get("value", "") for i in form.select('input[type="hidden"][name]')}
-                    body = {**hidden, **profile.login.extra_fields, username: c["credentials"]["username"], password: c["credentials"]["password"]}
-                    await self.policy.validate(action)
-                    result = await limited_request(client, self.settings, "POST", action, data=body, headers={"Origin": c["base_url"], "Referer": str(response.url)})
-                    # Follow only same-origin login redirects, always with GET, never replay credentials.
-                    for _ in range(3):
-                        if not result.is_redirect: break
-                        target = self.policy.same_origin(c["base_url"], result.headers.get("location", "/"))
-                        await self.policy.validate(target)
-                        result = await limited_request(client, self.settings, "GET", target)
-                    if result.status_code >= 400 or looks_like_login(result):
-                        self.store.set_session(identifier, {}, "requires_action")
-                        raise BridgeError("login_requires_action", "Login não confirmado. Confira credenciais, 2FA, CAPTCHA ou bloqueio no painel.", 401)
-                    # Hidden CSRF fields on the authenticated page, not stale login CSRF.
-                    after = BeautifulSoup(result.text, "html.parser")
-                    csrf = {i["name"]: i.get("value", "") for i in after.select('input[type="hidden"][name]')}
-                    for meta in after.select('meta[name][content]'):
-                        if "csrf" in meta["name"].lower(): csrf[meta["name"]] = meta["content"]
-                    self.store.set_session(identifier, {"cookies": save_cookies(client), "csrf": csrf}, "session_received")
-            except httpx.HTTPError as exc:
-                raise BridgeError("login_network_error", "Falha durante o login. Nenhuma tentativa automática adicional foi feita.", 502) from exc
-        # A JSON probe is required to upgrade session_received to authenticated.
-        profile = Profile.model_validate(c["profile"])
-        endpoint = profile.endpoints.get("list_clients")
-        if not endpoint or not endpoint.verified:
-            return {"status": "session_received", "message": "Sessão recebida; confirme o contrato de listagem para testar a autenticação."}
-        result = await self.execute(identifier, "list_clients", {"start": 0, "length": 1, "search": "", "draw": 1})
-        return {"status": "authenticated", "probe": result}
+        return await login_support.connect(self, identifier)
 
     async def browser_login(self, identifier):
-        if not self.settings.browser_enabled: raise BridgeError("browser_disabled", "Autenticação por navegador desabilitada nesta instância.", 409)
-        try:
-            from playwright.async_api import async_playwright, Error as PlaywrightError
-        except ImportError as exc: raise BridgeError("browser_unavailable", "Pacote incompleto: motor de navegador integrado ausente. Reinstale a distribuição completa.", 503) from exc
-        async with self.lock(identifier):
-            c = self.store.connection(identifier, True)
-            p = Profile.model_validate(c["profile"])
-            if not p.login.success_selector: raise BridgeError("browser_contract_missing", "Configure success_selector para confirmar o login sem adivinhação.", 409)
-            url = self.policy.relative_url(c["base_url"], p.login.page)
-            await self.policy.validate(url)
-            try:
-                async with async_playwright() as pw:
-                    from .browser_support import launch_browser
-                    browser = await launch_browser(pw, headless=self.settings.browser_headless)
-                    try:
-                        context = await browser.new_context(accept_downloads=False, service_workers="block")
-                        # Restrict every network request made by the login browser.
-                        async def guard(route):
-                            try:
-                                if urlsplit(route.request.url).scheme in {"data", "blob"}: return await route.continue_()
-                                self.policy.same_origin(c["base_url"], route.request.url)
-                                await self.policy.validate(route.request.url)
-                                await route.continue_()
-                            except BridgeError: await route.abort()
-                        await context.route("**/*", guard)
-                        page = await context.new_page()
-                        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-                        await page.locator(p.login.username_selector).fill(c["credentials"].get("username", ""))
-                        await page.locator(p.login.password_selector).fill(c["credentials"].get("password", ""))
-                        await page.locator(p.login.submit_selector).first.click()
-                        await page.locator(p.login.success_selector).wait_for(state="visible", timeout=30_000 if self.settings.browser_headless else 180_000)
-                        self.policy.same_origin(c["base_url"], page.url)
-                        cookies = []
-                        for cookie in await context.cookies():
-                            cookies.append({"name": cookie["name"], "value": cookie["value"], "domain": cookie["domain"], "path": cookie["path"], "secure": cookie["secure"], "expires": int(cookie["expires"]) if cookie["expires"] > 0 else None})
-                        csrf = await page.locator('input[type="hidden"][name]').evaluate_all('(nodes) => Object.fromEntries(nodes.map(n => [n.name,n.value]))')
-                        self.store.set_session(identifier, {"cookies": cookies, "csrf": csrf}, "session_received")
-                    finally: await browser.close()
-            except PlaywrightError as exc:
-                self.store.set_session(identifier, {}, "requires_action")
-                raise BridgeError("browser_requires_action", "Login pelo navegador não confirmado. Revise seletores, credenciais e eventuais desafios. Nenhum bloqueio foi contornado.", 409) from exc
-        if p.endpoints.get("list_clients") and p.endpoints["list_clients"].verified:
-            await self.execute(identifier, "list_clients", {"start": 0, "length": 1, "search": "", "draw": 1})
-            return {"status": "authenticated"}
-        return {"status": "session_received"}
+        return await login_support.browser_login(self, identifier)

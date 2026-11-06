@@ -59,7 +59,7 @@ def main() -> None:
         uid = compose("exec", "-T", "api", "python", "-c", "import os; print(os.getuid())", capture=True).stdout.strip()
         assert uid == "10001", "API must remain non-root"
         # No network and no browser cache from the builder: use the packaged runtime.
-        compose("exec", "-T", "api", "python", "-m", "app.browser_support", "--result", "/tmp/browser-smoke.json")
+        compose("exec", "-T", "api", "python", "-m", "app.browser_support", "--result", "/tmp/browser-smoke.json", "--diagnostic")
         compose("up", "-d", "--no-deps", "--no-build", "--pull", "never", "--force-recreate", "--wait", "--wait-timeout", "120", "api")
         token_after = compose("exec", "-T", "api", "python", "-c", "from pathlib import Path; print(Path('/data/admin.token').read_text().strip())", capture=True).stdout.strip()
         assert token_after == token, "Persistent token changed on recreation"
