@@ -35,6 +35,11 @@ jobs:
           old="tree=api('/git/trees', {'base_tree':'01b9f56b3557cf566bba0d517cbab3b6fa40f687', 'tree':entries})"
           assert old in text
           text=text.replace(old,"print('TESTED_PRODUCT_ENTRIES=' + json.dumps(entries)); tree={'sha':'publish-with-connected-github-tool'}")
+          needle='run: python -m playwright install --with-deps chromium'
+          assert text.count(needle)==1
+          # Native Windows builds already run Chromium without installing Server features.
+          expression='$' + '{{ runner.os == '+repr('Linux')+' && '+repr('--with-deps')+' || '+repr('')+' }}'
+          text=text.replace(needle,'timeout-minutes: 3\n        run: python -m playwright install '+expression+' chromium')
           p.write_text(text,encoding='utf-8')
           PY
           python scripts/_connection_fix_refinements.py
