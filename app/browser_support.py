@@ -52,6 +52,7 @@ async def self_test() -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--diagnostic", action="store_true", help="Incluir causa local do teste offline (sem credenciais)")
     args = parser.parse_args(argv)
     try:
         if sys.platform == "win32":
@@ -60,6 +61,15 @@ def main(argv=None) -> int:
         status = 0
     except Exception as exc:
         result = {"status": "error", "error_type": type(exc).__name__}
+        if isinstance(exc, BridgeError):
+            result["error_code"] = exc.code
+        if args.diagnostic:
+            # Este teste usa apenas HTML local, sem login, token ou rede.
+            # Exibir a causa do Playwright permite distinguir falta de DLL/SO,
+            # sandbox, permissões e esgotamento de recursos no Docker.
+            cause = exc.__cause__ or exc
+            result["cause_type"] = type(cause).__name__
+            result["detail"] = str(cause)[-3000:]
         status = 1
     args.result.parent.mkdir(parents=True, exist_ok=True)
     args.result.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
