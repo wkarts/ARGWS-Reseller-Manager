@@ -36,8 +36,10 @@ jobs:
       - run: node --test tests/frontend-build.test.mjs
       - run: python -m compileall -q app packaging scripts
       - name: Prepare integrated browser for connection regression tests
-        timeout-minutes: 3
-        run: python -m playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} chromium
+        # Hosted runners already have browser libraries. Do not invoke apt, which
+        # may stall downloading optional fonts and waste the test timeout.
+        timeout-minutes: 5
+        run: python -m playwright install chromium
       - run: python -m pytest -q --junitxml=build/test-results.xml
         env:
           RESMAN_RUN_BROWSER_TESTS: '1' 

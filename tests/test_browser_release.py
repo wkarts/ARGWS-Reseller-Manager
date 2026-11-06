@@ -95,6 +95,18 @@ def test_all_container_targets_include_chromium():
     assert 'if args.target == "browser":' not in smoke
 
 
+def test_ci_downloads_chromium_without_apt_on_hosted_runners():
+    # The native Docker build still installs Linux dependencies in its image;
+    # CI host runners must not block on apt downloads of optional font packs.
+    ci = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+    steps = ci["jobs"]["tests"]["steps"]
+    install = next(s for s in steps if s.get("name") == "Prepare integrated browser for connection regression tests")
+    assert install["run"] == "python -m playwright install chromium"
+    assert int(install["timeout-minutes"]) >= 5
+    pytest_step = next(s for s in steps if "python -m pytest -q" in s.get("run", ""))
+    assert pytest_step["env"]["RESMAN_RUN_BROWSER_TESTS"] == "1"
+
+
 def test_windows_always_bundles_and_tests_browser_before_archive():
     build = (ROOT / "packaging/build_windows.py").read_text()
     assert '"--exclude-module","playwright"' not in build
