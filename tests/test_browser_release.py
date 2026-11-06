@@ -196,6 +196,8 @@ def test_release_publishes_only_after_all_assets_verified(tmp_path, monkeypatch)
     monkeypatch.setattr(release, 'tag_sha', lambda *args: None)
     promoted = []
     monkeypatch.setattr(release, 'promote_images', lambda *args: promoted.append(args))
+    uploads = []
+    monkeypatch.setattr(release, 'upload_asset', lambda repo, release_id, path: uploads.append((release_id, path.name)))
     calls = []
     draft = {'id': 5, 'draft': True, 'target_commitish': SHA, 'tag_name': 'v' + VERSION}
 
@@ -211,8 +213,9 @@ def test_release_publishes_only_after_all_assets_verified(tmp_path, monkeypatch)
             assert payload['target_commitish'] == SHA and payload['draft'] is True
             return json.dumps(draft)
         if args[:2] == ('gh', 'api') and args[-1].endswith('/releases/5'):
-            return json.dumps({**draft, 'assets': [{'name': p.name, 'state': 'uploaded',
-                'size': p.stat().st_size, 'digest': 'sha256:' + release.checksum(p)} for p in assets]})
+            return json.dumps({**draft, 'assets': ([{'name': p.name, 'state': 'uploaded',
+                'size': p.stat().st_size, 'digest': 'sha256:' + release.checksum(p)}
+                for p in assets] if uploads else [])})
         return ''
 
     monkeypatch.setattr(release, 'run', fake_run)
@@ -220,7 +223,8 @@ def test_release_publishes_only_after_all_assets_verified(tmp_path, monkeypatch)
     assert promoted and calls[-1][:4] == ('gh', 'api', '--method', 'PATCH')
     assert 'draft=false' in calls[-1]
     assert sum(1 for c in calls if c[:4] == ('gh', 'api', '--method', 'POST')) == 1
-    assert any(c[1:3] == ('release', 'upload') for c in calls[:-1])
+    assert len(uploads) == len(assets) and all(ident == 5 for ident, _ in uploads)
+    assert not any(c[1:3] == ('release', 'upload') for c in calls)
 
 
 def test_invalid_draft_creation_response_never_uploads(tmp_path, monkeypatch):
@@ -248,6 +252,7 @@ def test_incomplete_remote_upload_keeps_release_draft(tmp_path, monkeypatch):
     assets = make_assets(tmp_path)
     monkeypatch.setattr(release, 'tag_sha', lambda *args: SHA)
     monkeypatch.setattr(release, 'promote_images', lambda *args: None)
+    monkeypatch.setattr(release, 'upload_asset', lambda *args: {})
     calls = []
     def fake_run(*args, **kwargs):
         calls.append(args)
