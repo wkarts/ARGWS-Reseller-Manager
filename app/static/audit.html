@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auditoria passiva e dry-run — Reseller Manager</title>
+<link rel="icon" href="/static/icon.ico">
+<link rel="stylesheet" href="/static/audit.css">
+<script defer src="/static/audit.js"></script>
+</head>
+<body>
+<header class="top">
+  <div><a class="back" href="/#contracts">← Reseller Manager</a>
+    <h1>Auditoria passiva e dry-run</h1>
+    <p>Pré-validação de contratos locais, sem criar clientes, renovar planos ou gastar créditos.</p>
+  </div>
+  <span class="safe">SOMENTE SIMULAÇÃO LOCAL</span>
+</header>
+<main>
+  <section class="panel">
+    <h2>Conexão e operação</h2>
+    <p class="muted">As conexões são lidas da instalação local. O botão nunca executa uma chamada de escrita no painel externo.</p>
+    <div class="fields">
+      <label>Conexão<select id="connections" aria-label="Conexão"><option value="">Carregando…</option></select></label>
+      <label>Ação<select id="actions" aria-label="Ação"></select></label>
+    </div>
+    <label>Parâmetros JSON (opcionais)<textarea id="params" rows="5" spellcheck="false">{}</textarea></label>
+    <div class="buttons"><button id="simulate">Simular sem executar</button><button id="matrix" class="secondary">Matriz completa de contratos</button></div>
+    <p class="note">Nenhuma requisição remota, lançamento financeiro, atualização de cliente ou agendamento é realizado por esta tela. Os parâmetros são enviados somente à API local para validação de formato; não são salvos no histórico.</p>
+    <div id="message" role="status" aria-live="polite"></div>
+  </section>
+  <section class="panel">
+    <h2>Resultado e pendências</h2>
+    <p class="muted">“Preparado localmente” não significa que o endpoint exista ou que a alteração tenha sido homologada.</p>
+    <pre id="output" tabindex="0">Selecione uma conexão e execute a simulação local.</pre>
+  </section>
+  <section class="panel">
+    <h2>Inventário observado na sessão autenticada</h2>
+    <p class="muted">Referências de navegação extraídas das abas de clientes do kOfficePanel 4.6.9 PREMIUM. São páginas da interface, não endpoints de integração confirmados. Nenhuma dessas rotas será chamada automaticamente.</p>
+    <div class="observed" id="observed"></div>
+    <p class="note">A opção de teste rápido /test/fast_client/1 foi deliberadamente excluída das solicitações automatizadas: mesmo uma rota GET pode gerar efeito comercial. O inventário completo exige documentação ou HAR sanitizado das páginas restantes.</p>
+  </section>
+</main>
+</body>
+</html>

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- Auditoria passiva do kOfficePanel a partir das abas de clientes autenticadas já abertas: inventário das áreas de clientes IPTV/P2P, revendedores, créditos e logs, sem navegação automatizada adicional.
+- Tela local `/audit` e endpoints de dry-run para matriz e pré-validação de todas as 20 ações; nenhuma chamada remota, crédito debitado, fila ou agendamento.
+- Respostas sempre marcadas como `NOT_EXECUTED`, com pendências de parâmetros e homologação. Sem expor credenciais, URLs do fornecedor ou valores submetidos.
+- Testes de isolamento, permissões, dados sensíveis e ausência de efeitos comerciais; preservados Windows, Docker/Dockge e GHCR.
+
+
 ## 0.1.3
 
 - Corrige a leitura de respostas HTTP comprimidas (gzip/deflate/br) no conector; evita HTTP 502 por dupla descompressão durante login por formulário ou verificação da sessão do navegador.

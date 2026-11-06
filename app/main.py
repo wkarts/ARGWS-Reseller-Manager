@@ -22,6 +22,7 @@ from .security import InstanceLock
 from .connector import Connector
 from .worker import Worker
 from .importers import inspect_document
+from .dry_run import DryRunRequest, preview as dry_run_preview, matrix as dry_run_matrix
 
 STATIC = Path(__file__).resolve().parent / "static"
 BEARER = HTTPBearer(auto_error=False)
@@ -138,6 +139,10 @@ def create_app(settings: Settings | None = None, transport=None):
         connector.prepare(c, action, payload.parameters)  # validates without any network call
         return store.enqueue(connection_id, action, payload.parameters, idem, c["revision"])
 
+    @app.get("/audit", include_in_schema=False)
+    async def audit_page():
+        return FileResponse(STATIC / "audit.html")
+
     @app.get("/health", tags=["Instalação"])
     async def health(): return {"status": "ok", "version": __version__, "service": "reseller-manager"}
 
@@ -207,6 +212,17 @@ def create_app(settings: Settings | None = None, transport=None):
     async def capabilities(connection_id: str, p=Depends(principal)):
         c = connection_access(connection_id, p)
         return {"connection_id": connection_id, "revision": c["revision"], "actions": [{"name": a, "kind": "read" if a in READ_ACTIONS else "write", "enabled": bool(c["profile"].get("endpoints", {}).get(a, {}).get("verified")), "evidence": c["profile"].get("endpoints", {}).get(a, {}).get("evidence", "")} for a in sorted(ACTIONS)]}
+
+    @app.get("/api/v1/connections/{connection_id}/dry-run", tags=["Dry-run"])
+    async def dry_run_all(connection_id: str, p=Depends(principal)):
+        # Administrator-only: inspect local metadata; never send provider requests.
+        c = connection_access(connection_id, p, "admin", True)
+        return dry_run_matrix(c)
+
+    @app.post("/api/v1/connections/{connection_id}/dry-run/{action}", tags=["Dry-run"])
+    async def dry_run_one(connection_id: str, action: str, request: DryRunRequest, p=Depends(principal)):
+        c = connection_access(connection_id, p, "admin", True)
+        return dry_run_preview(c, action, request.parameters)
 
     @app.post("/api/v1/contracts/inspect", tags=["Contratos"])
     async def contracts_inspect(document: dict, p=Depends(principal)):
