@@ -13,3 +13,12 @@ Perfil Servip2P deliberadamente não homologado. Não foram transportados módul
 - Workflows constroem e testam imagens runtime/browser e Windows após a validação, publicando GHCR somente em push autorizado.
 - Pacote de deploy com .env público, checksum e metadados; nenhum dado ou segredo de instalação é empacotado.
 - Correção LF/CRLF do frontend preservada, com testes que continuam rejeitando artefatos realmente desatualizados.
+
+## 0.1.0 — distribuição integrada e release automática
+
+- Playwright/Chromium incluídos no Docker padrão e em todo pacote Windows x64, sem downloads na máquina de uso.
+- `RESMAN_BROWSER_ENABLED` deixa de ser opt-in: `.env` antigo com valor 0 não bloqueia a atualização.
+- Smoke offline do Chromium executado pelo binário congelado, com cache externo vazio; ambos os targets Docker testam o navegador.
+- Releases após validação completa em main/tags, com ZIP Windows, deploys, SHA-256 e promoção por digest da imagem testada.
+- Guarda de versão/SHA impede sobrescrever uma release já publicada; rascunho só é publicado após upload completo.
+- Mantidos autenticação, contratos, credenciais, persistência, healthchecks, Docker/Dockge e modo Windows local.

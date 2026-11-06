@@ -9,12 +9,9 @@ if (-not (Test-Path '.venv\Scripts\python.exe')) {
 $Python = '.venv\Scripts\python.exe'
 & $Python -m pip install -r packaging/requirements-build.txt
 Check-Exit
-if ($WithBrowser) {
-    & $Python -m pip install -r requirements-browser.txt
-    Check-Exit
-}
+# Chromium is mandatory; -WithBrowser remains accepted for old invocations.
 $BuildArgs = @('packaging/build_windows.py')
-if ($WithBrowser) { $BuildArgs += '--with-browser' }
+$BuildArgs += '--with-browser'
 if ($OneFile) { $BuildArgs += '--onefile' }
 & $Python @BuildArgs
 Check-Exit

@@ -17,7 +17,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='reseller-smoke-') as directory:
         command=[a.executable,'--server'] if a.executable else [sys.executable,'-m','app.runtime']
         command+=['--host','127.0.0.1','--port',str(port),'--data',directory]
-        process=subprocess.Popen(command,cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        process=subprocess.Popen(command,cwd=directory if a.executable else ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         try:
             deadline=time.monotonic()+40

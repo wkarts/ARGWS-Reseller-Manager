@@ -1,3 +1,2 @@
+# Compatibility entry point. Chromium support is included in requirements.txt.
 -r requirements.txt
-# Optional: real Chromium login and UI smoke tests.
-playwright==1.57.0

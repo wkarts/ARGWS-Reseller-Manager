@@ -8,10 +8,14 @@ LABEL org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.description="FastAPI reseller bridge with verified contracts" \
       org.opencontainers.image.version="0.1.0"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
-    RESMAN_DATA=/data RESMAN_HOST=0.0.0.0 RESMAN_PORT=48190 HOME=/data
+    RESMAN_DATA=/data RESMAN_HOST=0.0.0.0 RESMAN_PORT=48190 HOME=/data \
+    PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers RESMAN_BROWSER_HEADLESS=1
 WORKDIR /app
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir --only-binary=:all: -r requirements.txt \
+    && python -m playwright install --with-deps chromium \
+    && chmod -R a+rX /opt/pw-browsers \
+    && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 10001 reseller \
     && useradd -u 10001 -g 10001 -d /data -s /usr/sbin/nologin reseller \
     && mkdir /data && chown 10001:10001 /data && chmod 700 /data
@@ -24,12 +28,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD python -c "import urllib.request; r=urllib.request.build_opener(urllib.request.ProxyHandler({})).open('http://127.0.0.1:48190/health',timeout=3); assert r.status==200"
 ENTRYPOINT ["python", "-m", "app.runtime"]
 
+# Compatibility target: standard runtime already includes Playwright and Chromium.
 FROM runtime AS browser
-USER root
-COPY requirements-browser.txt ./
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers RESMAN_BROWSER_ENABLED=1 RESMAN_BROWSER_HEADLESS=1
-RUN python -m pip install --no-cache-dir --only-binary=:all: -r requirements-browser.txt \
-    && python -m playwright install --with-deps chromium \
-    && chmod -R a+rX /opt/pw-browsers \
-    && rm -rf /var/lib/apt/lists/*
-USER 10001:10001

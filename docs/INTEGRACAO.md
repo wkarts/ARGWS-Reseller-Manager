@@ -10,7 +10,7 @@ A única URL remota observada na conversa foi `/clients/api/?get_clients`, com e
 
 `token_auth` define `location` (`header`, `query`, `body`), `name` e `prefix`. Configure `Authorization` / `Bearer ` somente quando o contrato do fornecedor realmente exigir. Tokens não podem ser usados como cabeçalhos Host/Cookie ou cabeçalhos de transporte.
 
-`login` define página, nomes de usuário/senha, seletor do formulário, campos adicionais e seletores do modo navegador. O modo HTTP lê os campos ocultos do formulário e envia POST. Formulários/redirects externos são bloqueados. O modo navegador é opcional e requer `success_selector` verificável, Playwright e Chromium.
+`login` define página, nomes de usuário/senha, seletor do formulário, campos adicionais e seletores do modo navegador. O modo HTTP lê os campos ocultos do formulário e envia POST. Formulários/redirects externos são bloqueados. O modo navegador requer `success_selector` verificável; Playwright e Chromium já fazem parte da distribuição. Não exige instalação extra nem opt-in por variável de ambiente.
 
 Cada ação em `endpoints` possui:
 

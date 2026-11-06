@@ -361,6 +361,7 @@ def test_public_observed_profile_disabled(env):
 
 def test_browser_mode_not_silently_emulated(env):
     c,a,p,t=env;cid=connection(c,mode='browser')
+    a.state.settings.browser_enabled=False
     r=c.post(f'/api/v1/connections/{cid}/connect')
     assert r.status_code==409 and r.json()['error']['code']=='browser_disabled' and not p.requests
 

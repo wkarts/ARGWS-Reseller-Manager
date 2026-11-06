@@ -6,7 +6,7 @@ Ferramenta própria de revendas em **Python/FastAPI**, adaptada do modelo `escri
 
 ## Entregue
 
-- Conexões por token (local/nome/prefixo configuráveis), formulário HTTP com cookies/CSRF e login opcional com navegador Playwright.
+- Conexões por token (local/nome/prefixo configuráveis), formulário HTTP com cookies/CSRF e login com Playwright/Chromium integrado.
 - API própria com tokens admin/operate/read, escopo por conexão, revogação e OpenAPI.
 - Consulta de clientes, cache incremental protegido e projeção explícita de colunas, sem exportar senhas de clientes.
 - Executor de cadastros, renovações, planos, telas, tecnologia, bloqueio, revendas, créditos e cobranças: habilitação depende de mapeamento real, evidência e regra de sucesso.
@@ -47,7 +47,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-windows.ps1
 Esse comando prepara dependências, executa testes, gera o pacote com `ResellerManager.exe`, valida o cabeçalho PE x64, executa smoke HTTP contra o executável e cria ZIP/checksum em `artifacts/`.
 
 ```powershell
-# Login com navegador, incluindo Chromium no pacote:
+# Chromium já está incluído por padrão; opção abaixo mantida por compatibilidade:
 powershell -ExecutionPolicy Bypass -File .\scripts\build-windows.ps1 -WithBrowser
 
 # Variante em um único .exe (o padrão é pasta portátil):
@@ -78,13 +78,13 @@ O modelo do deploy permite acesso pela rede em `0.0.0.0:48190`; use firewall e
 proxy HTTPS. Para proxy no mesmo host, ajuste `RESMAN_BIND=127.0.0.1`.
 No Dockge, copie compose e variáveis para os editores da stack ou use sua pasta de stacks.
 Persistência em `./data`, healthcheck mantido, inicialização de permissões e API não-root.
-A variante `-browser` inclui Chromium e exige `RESMAN_BROWSER_ENABLED=1`.
+A imagem padrão e o executável Windows já incluem Playwright e Chromium. Não é necessário habilitar `RESMAN_BROWSER_ENABLED`, instalar dependências ou baixar navegador na máquina de uso. As tags `-browser` são aliases de compatibilidade; `.env` antigo com `RESMAN_BROWSER_ENABLED=0` não desabilita o recurso.
 
 O workflow `Validate` testa Windows/Linux antes de construir as duas imagens e o
 executável Windows. Push em main/develop/tags publica imagens aprovadas no GHCR;
-PR apenas valida, sem publicar. Os artefatos de deploy e Windows ficam no Actions.
+PR apenas valida, sem publicar. Os artefatos de deploy e Windows ficam no Actions. Após push/merge em `main` (ou tag `vVERSION`), a release é criada automaticamente somente depois dos testes e builds nativos. O publicador verifica SHA, checksums e Chromium integrado antes de expor os downloads.
 Imagem: `ghcr.io/wkarts/argws-reseller-manager` (owner/repo calculados no workflow).
-Canais: `latest`, `develop`, versão em tags Git e `sha-...`, incluindo variantes `-browser`.
+Canais: `latest`, `develop`, versão promovida na release e `sha-...`, incluindo aliases `-browser`. Releases publicadas não são substituídas; incremente `VERSION` para uma nova entrega. Guia: [distribuição integrada](docs/DISTRIBUICAO-INTEGRADA.md).
 Não há publicação de imagem ou geração de EXE comprovada até os workflows passarem.
 
 Guia completo, atualização e preservação dos dados: [deploy/README.md](deploy/README.md).
@@ -154,4 +154,4 @@ Referências utilizáveis: `examples/reseller-manager.openapi.json` e `examples/
 
 Guia completo: [deploy GHCR/Dockge](deploy/README.md), [integração](docs/INTEGRACAO.md), [operação](docs/OPERACAO.md), [segurança](docs/SEGURANCA.md), [validação](docs/VALIDACAO.md), [reaproveitamento do modelo](docs/TEMPLATE.md).
 
-Autoria: **Wallace Kleiton — wkarts@gmail.com — WWSoftware’s**. Nome técnico: `reseller-manager`. Nome comercial provisório: **Reseller Manager**. Não foi criado repositório, PR, merge, release ou deploy nesta entrega.
+Autoria: **Wallace Kleiton — wkarts@gmail.com — WWSoftware’s**. Nome técnico: `reseller-manager`. Nome comercial provisório: **Reseller Manager**. A situação de publicação e dos builds é verificável no GitHub Actions/Releases; a homologação no fornecedor é independente.

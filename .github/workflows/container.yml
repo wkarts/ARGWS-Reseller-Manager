@@ -70,7 +70,7 @@ jobs:
       - name: Package standalone compose.yaml and .env
         run: |
           set -euo pipefail
-          image="$(python -c 'import json; print(json.load(open("build/distribution.json"))["primary"])')"
+          image="$(python -c 'import json; d=json.load(open("build/distribution.json")); print(next(t for t in d["tags"] if ":sha-" in t))')"
           args=()
           if [ "$TARGET" = 'browser' ]; then args+=(--browser); fi
           python scripts/package_deploy.py --image "$image" --source-sha "$GITHUB_SHA" "${args[@]}"

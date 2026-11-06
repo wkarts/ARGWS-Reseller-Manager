@@ -1,5 +1,5 @@
-"""Runtime hook included only in the optional Chromium Windows bundle."""
+"""Frozen bundles always use their embedded browser, never a machine-wide cache."""
 import os
 
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "0")
-os.environ.setdefault("RESMAN_BROWSER_ENABLED", "1")
+# A stale environment variable must not redirect the bundled executable to a cache.
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"

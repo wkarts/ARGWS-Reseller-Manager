@@ -111,7 +111,7 @@ def test_deploy_archive_has_ready_env_and_no_sources_or_secrets(tmp_path, monkey
         assert set(z.namelist()) == {'compose.yaml', '.env', '.env.example', 'README.md', 'deployment.json'}
         env = z.read('.env').decode()
         assert 'RESMAN_IMAGE=' + image in env
-        assert 'RESMAN_BROWSER_ENABLED=' + str(int(browser)) in env
+        assert 'RESMAN_BROWSER_ENABLED=0' not in env
         assert z.read('.env.example') == z.read('.env')
         assert json.loads(z.read('deployment.json'))['source_sha'] == SHA
         assert all(b'SECRET_NOT_FOR_DISTRIBUTION' not in z.read(name) for name in z.namelist())
@@ -164,15 +164,14 @@ def test_windows_build_preserved_and_available_from_validation():
     assert (ROOT / 'scripts/start-windows.cmd').is_file()
 
 
-def test_browser_bundle_defaults_do_not_override_user_environment(monkeypatch):
+def test_browser_bundle_always_uses_embedded_path(monkeypatch):
     monkeypatch.delenv('RESMAN_BROWSER_ENABLED', raising=False)
     monkeypatch.delenv('PLAYWRIGHT_BROWSERS_PATH', raising=False)
     runpy.run_path(str(ROOT / 'packaging/browser_hook.py'))
     import os
-    assert os.environ['RESMAN_BROWSER_ENABLED'] == '1'
     assert os.environ['PLAYWRIGHT_BROWSERS_PATH'] == '0'
     monkeypatch.setenv('RESMAN_BROWSER_ENABLED', '0')
     monkeypatch.setenv('PLAYWRIGHT_BROWSERS_PATH', 'custom')
     runpy.run_path(str(ROOT / 'packaging/browser_hook.py'))
     assert os.environ['RESMAN_BROWSER_ENABLED'] == '0'
-    assert os.environ['PLAYWRIGHT_BROWSERS_PATH'] == 'custom'
+    assert os.environ['PLAYWRIGHT_BROWSERS_PATH'] == '0'

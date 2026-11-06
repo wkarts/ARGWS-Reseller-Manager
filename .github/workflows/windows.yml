@@ -3,17 +3,18 @@ on:
   workflow_call:
     inputs:
       with_browser:
+        description: Compatibility input; Chromium is always included
         type: boolean
-        default: false
+        default: true
       onefile:
         type: boolean
         default: false
   workflow_dispatch:
     inputs:
       with_browser:
-        description: Include Chromium for browser login
+        description: Compatibility input; Chromium is always included
         type: boolean
-        default: false
+        default: true
       onefile:
         description: Generate single executable
         type: boolean
