@@ -1,0 +1,3 @@
+-r requirements.txt
+# Optional: real Chromium login and UI smoke tests.
+playwright==1.57.0

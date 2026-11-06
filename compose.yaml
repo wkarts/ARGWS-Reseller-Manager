@@ -1,0 +1,49 @@
+# Desenvolvimento local: build a partir do código-fonte.
+# Para GHCR/Dockge sem código-fonte, use deploy/compose.yaml e deploy/.env.example.
+services:
+  data-init:
+    image: reseller-manager:${RESMAN_VERSION:-0.1.0}
+    build:
+      context: .
+      target: ${RESMAN_DOCKER_TARGET:-runtime}
+    user: "0:0"
+    entrypoint: ["python", "/app/scripts/init_data.py"]
+    network_mode: none
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ./data:/data
+  api:
+    image: reseller-manager:${RESMAN_VERSION:-0.1.0}
+    build:
+      context: .
+      target: ${RESMAN_DOCKER_TARGET:-runtime}
+    depends_on:
+      data-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    init: true
+    read_only: true
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "${RESMAN_BIND:-127.0.0.1}:${RESMAN_PORT:-48190}:48190"
+    volumes:
+      - ./data:/data
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    shm_size: 256mb
+    environment:
+      RESMAN_DATA: /data
+      RESMAN_HOST: 0.0.0.0
+      RESMAN_PORT: "48190"
+      RESMAN_ALLOWED_HOSTS: ${RESMAN_ALLOWED_HOSTS:-servip2p.com}
+      RESMAN_PRIVATE_HOSTS: ${RESMAN_PRIVATE_HOSTS:-}
+      RESMAN_PUBLIC_ORIGIN: ${RESMAN_PUBLIC_ORIGIN:-}
+      RESMAN_BROWSER_ENABLED: ${RESMAN_BROWSER_ENABLED:-0}
+      RESMAN_BROWSER_HEADLESS: "1"
+    stop_grace_period: 50s

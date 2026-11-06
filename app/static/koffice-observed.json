@@ -1,0 +1,14 @@
+{
+  "name": "kOfficePanel v4.6.9 PREMIUM — Servip2P (observado, não homologado)",
+  "token_auth": {"location": "header", "name": "", "prefix": ""},
+  "login": {"page": "/login/", "username_field": "", "password_field": "", "form_selector": "form", "username_selector": "input[name=\"username\"]", "password_selector": "input[type=\"password\"]", "submit_selector": "button[type=\"submit\"], input[type=\"submit\"]", "success_selector": "", "extra_fields": {}},
+  "endpoints": {
+    "list_clients": {
+      "method": "GET", "path": "/clients/api/?get_clients", "encoding": "query",
+      "params": {}, "body": {}, "headers": {"Accept": "application/json"},
+      "required": [], "verified": false,
+      "evidence": "Apenas URL e resposta DataTables observadas nas capturas do usuário. GET é candidato NÃO confirmado; nomes dos campos, autenticação e paginação ainda precisam de evidência.",
+      "data_path": "data", "fields": {}, "success_path": null, "success_value": true, "success_status": [200, 201]
+    }
+  }
+}

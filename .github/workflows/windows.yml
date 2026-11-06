@@ -1,0 +1,61 @@
+name: Windows binary
+on:
+  workflow_call:
+    inputs:
+      with_browser:
+        type: boolean
+        default: false
+      onefile:
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      with_browser:
+        description: Include Chromium for browser login
+        type: boolean
+        default: false
+      onefile:
+        description: Generate single executable
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          architecture: x64
+          cache: pip
+          cache-dependency-path: |
+            requirements*.txt
+            packaging/requirements-build.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node frontend/build.mjs --check
+      - name: Build and smoke-test native executable
+        shell: pwsh
+        env:
+          WITH_BROWSER: ${{ inputs.with_browser }}
+          ONEFILE: ${{ inputs.onefile }}
+        run: |
+          $args = @{}
+          if ($env:WITH_BROWSER -eq 'true') { $args.WithBrowser = $true }
+          if ($env:ONEFILE -eq 'true') { $args.OneFile = $true }
+          ./scripts/build-windows.ps1 @args
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reseller-manager-windows-x64
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14

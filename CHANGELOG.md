@@ -1,0 +1,15 @@
+# Changelog
+
+## 0.1.0 — 2026-11-06
+
+Primeira implementação do Reseller Manager baseada na estrutura do template fornecido. API FastAPI, UI Vue local, executor HTTP por contrato, autenticação por token/formulário e navegador opcional, fila SQLite, idempotência, proteção de segredos, agendamentos, eventos, Postman/HAR, Docker e build Windows x64.
+
+Perfil Servip2P deliberadamente não homologado. Não foram transportados módulos de escrituração. Nenhuma alteração foi feita no painel real.
+
+## Correção de distribuição da PR #1
+
+- Restaurado deploy independente GHCR/Dockge com compose.yaml, modelo .env e persistência ./data.
+- Mantido o compose de build local e o executável Windows x64; variante browser recebe defaults próprios no pacote.
+- Workflows constroem e testam imagens runtime/browser e Windows após a validação, publicando GHCR somente em push autorizado.
+- Pacote de deploy com .env público, checksum e metadados; nenhum dado ou segredo de instalação é empacotado.
+- Correção LF/CRLF do frontend preservada, com testes que continuam rejeitando artefatos realmente desatualizados.
