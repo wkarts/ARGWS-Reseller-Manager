@@ -35,7 +35,11 @@ jobs:
       - run: node frontend/build.mjs --check
       - run: node --test tests/frontend-build.test.mjs
       - run: python -m compileall -q app packaging scripts
+      - name: Prepare integrated browser for connection regression tests
+        run: python -m playwright install --with-deps chromium
       - run: python -m pytest -q --junitxml=build/test-results.xml
+        env:
+          RESMAN_RUN_BROWSER_TESTS: '1' 
       - run: python scripts/smoke_runtime.py
       - uses: actions/upload-artifact@v4
         if: always()

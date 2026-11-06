@@ -3,9 +3,205 @@
   "info": {
     "title": "Reseller Manager",
     "description": "API própria para operações de revenda. Os contratos do painel externo são configurados e validados separadamente; nenhuma compatibilidade não testada é presumida.",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "paths": {
+    "/api/v1/connections/{connection_id}": {
+      "patch": {
+        "tags": [
+          "Conexões"
+        ],
+        "summary": "Connection Patch",
+        "operationId": "connection_patch_api_v1_connections__connection_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Conexões"
+        ],
+        "summary": "Connection Delete",
+        "operationId": "connection_delete_api_v1_connections__connection_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionDelete"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Conexões"
+        ],
+        "summary": "Connection Get",
+        "operationId": "connection_get_api_v1_connections__connection_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/connections/{connection_id}/deletion-preview": {
+      "get": {
+        "tags": [
+          "Conexões"
+        ],
+        "summary": "Deletion Preview",
+        "operationId": "deletion_preview_api_v1_connections__connection_id__deletion_preview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -224,51 +420,6 @@
             "HTTPBearer": []
           }
         ]
-      }
-    },
-    "/api/v1/connections/{connection_id}": {
-      "get": {
-        "tags": [
-          "Conexões"
-        ],
-        "summary": "Connection Get",
-        "operationId": "connection_get_api_v1_connections__connection_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "connection_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Connection Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/v1/connections/{connection_id}/profile": {
@@ -1617,6 +1768,155 @@
           "base_url"
         ],
         "title": "ConnectionCreate"
+      },
+      "ConnectionDelete": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "confirm_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Confirm Name"
+          },
+          "acknowledge_uncertain": {
+            "type": "boolean",
+            "title": "Acknowledge Uncertain",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "confirm_name"
+        ],
+        "title": "ConnectionDelete"
+      },
+      "ConnectionPatch": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "auth_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "token",
+                  "form",
+                  "browser"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Mode"
+          },
+          "credentials": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CredentialPatch"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "clear_credentials": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "username",
+                "password",
+                "token"
+              ]
+            },
+            "type": "array",
+            "title": "Clear Credentials"
+          },
+          "login": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Login"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "token_auth": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TokenAuth"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision"
+        ],
+        "title": "ConnectionPatch"
+      },
+      "CredentialPatch": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Password",
+            "default": ""
+          },
+          "token": {
+            "type": "string",
+            "maxLength": 8192,
+            "title": "Token",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CredentialPatch"
       },
       "Credentials": {
         "properties": {

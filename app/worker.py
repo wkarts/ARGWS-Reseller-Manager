@@ -41,6 +41,13 @@ class Worker:
     async def deliver_one(self):
         d = self.store.pending_delivery()
         if not d: return
+        async with self.connector.lock(d["connection_id"] or "__global_webhooks__"):
+            current = self.store.pending_delivery()
+            if not current or current["id"] != d["id"]:
+                return
+            await self._deliver(d)
+
+    async def _deliver(self, d):
         delivered = False
         try:
             await self.connector.policy.validate(d["url"])

@@ -117,6 +117,9 @@ def create_app(settings: Settings | None = None, transport=None):
         if not value: raise BridgeError("unauthorized", "Informe um token válido desta API, não o token do kOfficePanel.", 401)
         return value
 
+    from .connection_management import register_connection_management
+    register_connection_management(app, store, connector, principal, authorize)
+
     def connection_access(connection_id, p, scope="read", private=False):
         authorize(p, scope, connection_id)
         return store.connection(connection_id, private)

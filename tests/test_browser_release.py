@@ -31,12 +31,20 @@ def test_browser_included_without_legacy_opt_in(monkeypatch, old_flag):
     assert Settings().browser_enabled is True
 
 
-def test_browser_connection_reaches_contract_validation_without_opt_in(env):
+def test_browser_connection_reaches_login_without_opt_in(env, monkeypatch):
+    from app import login_support
     client, app, panel, token = env
+    attempts = []
+    async def capture(connector, current, profile):
+        attempts.append(current["id"])
+        assert not profile.login.success_selector
+        raise BridgeError("synthetic_login_reached", "Login de teste alcançado", 409)
+    monkeypatch.setattr(login_support, "capture_browser", capture)
     identifier = connection(client, mode="browser")
     result = client.post(f"/api/v1/connections/{identifier}/connect")
     assert result.status_code == 409
-    assert result.json()["error"]["code"] == "browser_contract_missing"
+    assert result.json()["error"]["code"] == "synthetic_login_reached"
+    assert attempts == [identifier]
     assert not panel.requests
 
 

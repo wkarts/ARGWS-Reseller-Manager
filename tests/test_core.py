@@ -93,8 +93,8 @@ def test_external_form_action_blocked(env):
     assert len(p.requests)==1
 
 
-def test_form_fields_must_be_confirmed(env):
-    c,a,p,t=env;pr=profile();pr['login']['username_field']='';cid=connection(c,mode='form',contract=pr)
+def test_explicit_form_fields_must_exist_before_submitting(env):
+    c,a,p,t=env;pr=profile();pr['login']['username_field']='field_not_present';cid=connection(c,mode='form',contract=pr)
     assert c.post(f'/api/v1/connections/{cid}/connect').status_code==409 and p.logins==0
 
 

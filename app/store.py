@@ -361,6 +361,7 @@ class Store:
     def finish_delivery(self, identifier, delivered):
         with self.db(True) as db:
             r = db.execute("SELECT attempts FROM deliveries WHERE id=?", (identifier,)).fetchone()
+            if r is None: return  # A fully deleted connection has no pending deliveries.
             attempt = r["attempts"] + 1
             next_at = (datetime.now(timezone.utc) + timedelta(seconds=min(3600, 5 * (2 ** attempt)))).isoformat(timespec="seconds")
             db.execute("UPDATE deliveries SET attempts=?,status=?,next_at=? WHERE id=?", (attempt, "delivered" if delivered else "failed" if attempt >= 8 else "pending", next_at, identifier))
