@@ -6,7 +6,7 @@ LABEL org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.title="Reseller Manager" \
       org.opencontainers.image.description="FastAPI reseller bridge with verified contracts" \
-      org.opencontainers.image.version="0.1.3"
+      org.opencontainers.image.version="0.1.4"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     RESMAN_DATA=/data RESMAN_HOST=0.0.0.0 RESMAN_PORT=48190 HOME=/data \
     PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers RESMAN_BROWSER_HEADLESS=1

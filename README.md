@@ -1,4 +1,4 @@
-# Reseller Manager — 0.1.3
+# Reseller Manager — 0.1.4
 
 Ferramenta própria de revendas em **Python/FastAPI**, adaptada do modelo `escrituracao-contabil-0.3.0-dev.9.1.zip` fornecido por Wallace. Painel web Vue local, API REST, eventos WebSocket, fila persistente SQLite, credenciais criptografadas, execução Docker e projeto de executável gráfico Windows x64.
 
@@ -155,3 +155,9 @@ Referências utilizáveis: `examples/reseller-manager.openapi.json` e `examples/
 Guia completo: [deploy GHCR/Dockge](deploy/README.md), [integração](docs/INTEGRACAO.md), [operação](docs/OPERACAO.md), [segurança](docs/SEGURANCA.md), [validação](docs/VALIDACAO.md), [reaproveitamento do modelo](docs/TEMPLATE.md).
 
 Autoria: **Wallace Kleiton — wkarts@gmail.com — WWSoftware’s**. Nome técnico: `reseller-manager`. Nome comercial provisório: **Reseller Manager**. A situação de publicação e dos builds é verificável no GitHub Actions/Releases; a homologação no fornecedor é independente.
+
+
+## Auditoria passiva e dry-run
+
+Após entrar no painel, abra **Auditoria e dry-run** no menu ou acesse `/audit` na mesma instalação.
+A matriz e as simulações são executadas exclusivamente na API local e **não geram requisições ao fornecedor**, créditos, alterações ou agendamentos. Consulte `docs/KOFFICE-AUDITORIA-PASSIVA.md` para o inventário já observado e os limites da auditoria.
