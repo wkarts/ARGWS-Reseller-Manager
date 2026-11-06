@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+- Corrige a leitura de respostas HTTP comprimidas (gzip/deflate/br) no conector; evita HTTP 502 por dupla descompressão durante login por formulário ou verificação da sessão do navegador.
+- Preserva cookies, mantém limite sobre conteúdo descomprimido e corrige cabeçalhos de comprimento e codificação ao reconstruir respostas.
+- Acrescenta regressões de login, consulta autenticada e limite de tamanho. Mantém proteção CSP, persistência e as distribuições Windows/Docker/Dockge.
+
+
 ## 0.1.2
 
 - Corrige a publicação de releases: usa o ID retornado ao criar o rascunho e também no upload direto dos anexos, sem consultas imediatas por tag sujeitas a atraso de propagação.

@@ -52,4 +52,13 @@ async def limited_request(client, settings, method, url, **kwargs):
             content.extend(part)
             if len(content) > settings.max_upstream_bytes:
                 raise BridgeError("upstream_too_large", "Resposta do painel ultrapassou o limite configurado.", 502)
-        return httpx.Response(response.status_code, headers=response.headers, content=bytes(content), request=response.request)
+        # aiter_bytes() already decoded gzip/deflate/br and checked the
+        # decompressed payload size. Reusing Content-Encoding here would make
+        # the new Response decode the same content a second time.
+        headers = httpx.Headers(response.headers)
+        for name in ("content-encoding", "content-length", "transfer-encoding"):
+            if name in headers:
+                del headers[name]
+        return httpx.Response(response.status_code, headers=headers,
+                              content=bytes(content), request=response.request,
+                              extensions=response.extensions)
