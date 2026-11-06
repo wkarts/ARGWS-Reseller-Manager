@@ -22,7 +22,9 @@ async def launch_browser(playwright, *, headless: bool = True):
         if not executable.is_relative_to(bundle):
             raise BridgeError("browser_unavailable", "O navegador deve pertencer ao pacote da aplicação, não a uma instalação externa.", 503)
     try:
-        return await playwright.chromium.launch(headless=headless)
+        # The default headless shell crashed (SIGSEGV) in the hardened Docker
+        # runtime. Launch the already-bundled full Chromium with modern headless.
+        return await playwright.chromium.launch(channel="chromium", headless=headless)
     except PlaywrightError as exc:
         raise BridgeError("browser_unavailable", "Não foi possível iniciar o Chromium integrado. Confira a integridade do pacote e as permissões da instalação.", 503) from exc
 
@@ -44,7 +46,8 @@ async def self_test() -> dict:
             if await page.title() != "Reseller integrated browser" or await page.locator("#result").inner_text() != "ready":
                 raise RuntimeError("Integrated browser render failed")
             return {"status": "ok", "engine": "chromium", "version": browser.version,
-                    "frozen": bool(getattr(sys, "frozen", False)), "network": "offline"}
+                    "frozen": bool(getattr(sys, "frozen", False)), "network": "offline",
+                    "browser_channel": "chromium"}
         finally:
             await browser.close()
 
