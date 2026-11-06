@@ -18,36 +18,21 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements*.txt
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: python -m pip install -r requirements-dev.txt
-      - name: Inspect public login without credentials
-        if: ${{ hashFiles('scripts/_prepare_connection_fix.py') == '' }}
-        run: |
-          python - <<'PY'
-          import httpx, json
-          from bs4 import BeautifulSoup
-          for url in ['https://servip2p.com/login/']:
-            try:
-              with httpx.Client(follow_redirects=False, timeout=20, trust_env=False) as client:
-                r=client.get(url)
-                print('PUBLIC_PAGE', r.status_code, str(r.url), r.headers.get('content-type'))
-                soup=BeautifulSoup(r.text, 'html.parser')
-                for f in soup.select('form'):
-                  print('FORM',json.dumps({'action':f.get('action'),'method':f.get('method'),'id':f.get('id'),'fields':[{'name':i.get('name'),'type':i.get('type'),'id':i.get('id')} for i in f.select('input,button,select')]},ensure_ascii=False))
-                for s in soup.select('script[src]'):
-                  print('SCRIPT', s.get('src'))
-                for s in soup.select('script:not([src])'):
-                  text=s.get_text()
-                  if any(k in text.lower() for k in ['ajax','login','submit','fetch(']):
-                    print('INLINE_PUBLIC_LOGIN',text[:16000])
-                print('TITLE',soup.title.get_text() if soup.title else '')
-            except Exception as exc:
-              print('PUBLIC_INSPECTION_FAILED',type(exc).__name__,str(exc)[:300])
-          PY
       - name: Prepare and validate correction
-        if: ${{ hashFiles('scripts/_prepare_connection_fix.py') != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/_prepare_connection_fix.py
+        run: python scripts/_connection_fix_refinements.py
+      - name: Preserve synthetic UI validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connection-fix-ui-evidence
+          path: build/ui-connections-*.png
+          if-no-files-found: warn
+          retention-days: 7
