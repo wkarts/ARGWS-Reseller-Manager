@@ -1,3 +1,5 @@
+import gzip
+import zlib
 import asyncio
 import ssl
 import httpx
@@ -146,3 +148,76 @@ def test_blank_200_is_never_authentication_success(env):
     assert response.status_code==409
     assert response.json()['error']['code']=='login_unconfirmed'
     assert app.state.store.connection(identifier,True)['session']=={}
+
+
+@pytest.mark.parametrize("encoding,compressor", [("gzip", gzip.compress), ("deflate", zlib.compress)])
+def test_compressed_form_login_and_client_probe(env, encoding, compressor):
+    client, app, panel, _ = env
+
+    def handler(request):
+        original = panel(request)
+        if original.status_code != 200:
+            return original
+        raw = compressor(original.content)
+        headers = httpx.Headers(original.headers)
+        headers["Content-Encoding"] = encoding
+        headers["Content-Length"] = str(len(raw))
+        return httpx.Response(200, headers=headers, content=raw, request=request)
+
+    app.state.connector.transport = httpx.MockTransport(handler)
+    identifier = connection(client, mode="form")
+    response = client.post(f"/api/v1/connections/{identifier}/connect")
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "authenticated"
+    assert panel.logins == 1
+    assert app.state.store.connection(identifier, True)["session"]["cookies"]
+
+
+def test_compressed_browser_session_verification(env, monkeypatch):
+    client, app, panel, _ = env
+    from app import login_support
+
+    async def capture(_connector, _connection, _profile):
+        return {
+            "cookies": [{"name": "PHPSESSID", "value": "AUTH_SESSION",
+                         "domain": "panel.example", "path": "/", "secure": True,
+                         "expires": None, "rest": {}}],
+            "csrf": {}, "user_agent": "Synthetic browser fixture"
+        }, True
+
+    def handler(request):
+        original = panel(request)
+        if request.url.path == "/clients/api/" and original.status_code == 200:
+            raw = gzip.compress(original.content)
+            headers = httpx.Headers(original.headers)
+            headers["Content-Encoding"] = "gzip"
+            headers["Content-Length"] = str(len(raw))
+            return httpx.Response(200, headers=headers, content=raw, request=request)
+        return original
+
+    monkeypatch.setattr(login_support, "capture_browser", capture)
+    app.state.connector.transport = httpx.MockTransport(handler)
+    identifier = connection(client, mode="browser")
+    response = client.post(f"/api/v1/connections/{identifier}/connect")
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "authenticated"
+    assert app.state.store.connection(identifier)["status"] == "authenticated"
+
+
+def test_size_limit_applies_to_decoded_response():
+    from app.network import limited_request
+    from app.settings import Settings
+
+    def handler(request):
+        return httpx.Response(200, headers={"Content-Encoding": "gzip"},
+                              content=gzip.compress(b"X" * 8192), request=request)
+
+    async def check():
+        settings = Settings()
+        settings.max_upstream_bytes = 128
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            with pytest.raises(BridgeError) as exc:
+                await limited_request(client, settings, "GET", "https://panel.example/large")
+            assert exc.value.code == "upstream_too_large"
+
+    asyncio.run(check())
