@@ -1,0 +1,47 @@
+name: Container
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish validated image to GHCR
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: container-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Build and validate default container
+        run: |
+          docker compose config --quiet
+          docker compose up -d --build
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:48190/health; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:48190/health
+          curl --fail --silent http://127.0.0.1:48190/docs > /dev/null
+      - name: Publish to GHCR
+        if: inputs.publish
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          image="ghcr.io/$(printf '%s' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          version="$(cat VERSION)"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          docker tag "reseller-manager:$version" "$image:$version"
+          docker push "$image:$version"
+      - name: Stop test stack
+        if: always()
+        run: docker compose down

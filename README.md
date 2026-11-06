@@ -1,45 +1,126 @@
-# ARGWS-Reseller-Manager
+# Reseller Manager — 0.1.0
 
-Repositorio criado online e pre-configurado para:
+Ferramenta própria de revendas em **Python/FastAPI**, adaptada do modelo `escrituracao-contabil-0.3.0-dev.9.1.zip` fornecido por Wallace. Painel web Vue local, API REST, eventos WebSocket, fila persistente SQLite, credenciais criptografadas, execução Docker e projeto de executável gráfico Windows x64.
 
-- Codigo-fonte
-- Releases GitHub
-- Docker Images
-- GitHub Packages / GHCR
+**Esta entrega não é uma API oficial do kOfficePanel nem uma homologação da instalação Servip2P.** O software de integração está implementado e é testável; os endpoints remotos de alteração dependem de contratos reais aprovados. O perfil inicial contém somente a URL de listagem observada, DESABILITADA: método, autenticação, campos e paginação não foram comprovados. Não foram feitos login, cadastros, pagamentos ou renovações reais.
 
-## Visibilidade configurada
+## Entregue
 
-Repository: private
+- Conexões por token (local/nome/prefixo configuráveis), formulário HTTP com cookies/CSRF e login opcional com navegador Playwright.
+- API própria com tokens admin/operate/read, escopo por conexão, revogação e OpenAPI.
+- Consulta de clientes, cache incremental protegido e projeção explícita de colunas, sem exportar senhas de clientes.
+- Executor de cadastros, renovações, planos, telas, tecnologia, bloqueio, revendas, créditos e cobranças: habilitação depende de mapeamento real, evidência e regra de sucesso.
+- Fila durável, Idempotency-Key, prevenção de concorrência por cliente, estado de conferência para resultados ambíguos, cancelamento antes da execução.
+- Agendamentos de renovação e entrada autenticada de confirmação de pagamento pelo ERP. **Não inclui gateway de pagamento ou validação automática de Pix.**
+- WebSocket com autenticação na primeira mensagem e webhooks de saída HMAC-SHA256, IDs estáveis e até oito tentativas.
+- Inspeção de coleções Postman v2/v2.1 e HAR: rascunhos desabilitados, sem executar scripts ou importar cookies/credenciais de forma automática.
+- UI clara responsiva, documentação local sem CDN, lançador Windows com bandeja reaproveitada do modelo.
 
-## Imagem Docker GHCR
+## 1. Executar no Windows pelo código-fonte
 
-ghcr.io/wkarts/ARGWS-Reseller-Manager:latest
+Instale **Python 3.12 x64**. Na raiz do projeto:
 
-## Pull da imagem
+```cmd
+scripts\start-windows.cmd
+```
 
-Se o package estiver publico:
+O script cria `.venv`, instala dependências e abre a administração gráfica. Clique em **Abrir painel** e **Copiar token de primeiro acesso**. A pasta padrão dos dados é `%LOCALAPPDATA%\ResellerManager\data`. A janela pode permanecer na bandeja; o serviço precisa ficar em execução para processar agendamentos.
 
-docker pull ghcr.io/wkarts/ARGWS-Reseller-Manager:latest
+Alternativa no terminal, sem janela gráfica:
 
-Se o package estiver privado:
+```cmd
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m app.runtime --host 127.0.0.1 --port 48190 --data .\data
+```
 
-echo SEU_TOKEN_GITHUB | docker login ghcr.io -u SEU_USUARIO --password-stdin
-docker pull ghcr.io/wkarts/ARGWS-Reseller-Manager:latest
+Acesse `http://127.0.0.1:48190`. O primeiro token fica em `data\admin.token`. O token do Reseller Manager autentica SUA API. O token do kOfficePanel é outro segredo, cadastrado na conexão.
 
-## Observacoes
+## 2. Gerar o binário Windows
 
-- Releases seguem a visibilidade do repositorio.
-- O package Docker/GHCR so existe depois da primeira publicacao da imagem.
-- A imagem e vinculada ao repositorio usando o label OCI:
+Em PowerShell no Windows x64:
 
-org.opencontainers.image.source=https://github.com/wkarts/ARGWS-Reseller-Manager
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows.ps1
+```
 
-Apos a primeira publicacao, valide em:
+Esse comando prepara dependências, executa testes, gera o pacote com `ResellerManager.exe`, valida o cabeçalho PE x64, executa smoke HTTP contra o executável e cria ZIP/checksum em `artifacts/`.
 
-GitHub -> Profile/Organization -> Packages -> Package settings
+```powershell
+# Login com navegador, incluindo Chromium no pacote:
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows.ps1 -WithBrowser
 
-Confira:
+# Variante em um único .exe (o padrão é pasta portátil):
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows.ps1 -OneFile
+```
 
-Repository conectado
-Manage Actions access / Inherit access from source repository
-Visibility: Public ou Private
+No pacote portátil padrão, **distribua a pasta inteira**, não apenas o EXE. O usuário final não precisa instalar Python. Para executar sem interface: `ResellerManager.exe --server --host 127.0.0.1 --port 48190 --data C:\ResellerData`.
+
+**O ZIP desta entrega contém código-fonte e o processo de build, não um EXE Windows já compilado.** O ambiente de geração foi Linux, sem Windows/Wine. O build nativo foi preparado, mas não executado aqui. Workflow `.github/workflows/windows.yml` pode gerar o binário no runner Windows após publicação do repositório.
+
+## 3. Docker Compose
+
+Na raiz:
+
+```sh
+cp .env.example .env
+docker compose up -d --build
+docker compose logs --tail=100 api
+docker compose exec api cat /data/admin.token
+```
+
+Windows CMD: use `copy .env.example .env` no lugar de `cp`.
+
+Painel: `http://127.0.0.1:48190` · documentação: `/docs` · especificação: `/openapi.json` · saúde: `/health`.
+
+Persistência em **`./data:/data`**. O serviço transitório `data-init` ajusta permissões do volume, sem rede; a API executa como UID 10001, sem capabilities, com filesystem somente leitura. A porta externa fica em loopback por padrão. Para acesso externo, configure proxy HTTPS e `RESMAN_PUBLIC_ORIGIN`; `RESMAN_BIND=0.0.0.0` altera o bind, mas não instala TLS.
+
+O container não depende de Node em execução. Os assets Vue já estão compilados. Redis não é necessário nesta versão: a fila usa SQLite e um único processo para funcionar também no executável Windows.
+
+**Docker não estava instalado neste ambiente de entrega.** Os arquivos foram inspecionados, mas o build e a execução da imagem precisam da rodada nativa do workflow `Container` ou do seu Docker.
+
+## 4. Configurar a primeira conexão
+
+1. Entre com o token próprio da instalação e cadastre a conta em **Conexões**. O domínio precisa estar em `RESMAN_ALLOWED_HOSTS` (padrão: `servip2p.com`).
+2. Para login HTTP, use **Inspecionar formulário**; configure os nomes exatos em `login.username_field` e `login.password_field`, na tela **Contratos e descoberta**. O conector preserva os campos ocultos da página.
+3. Para token, copie do contrato público a localização, o nome e o prefixo. **Bearer não é presumido.**
+4. Importe a coleção Postman/HAR ou edite o perfil. Confirme método, caminho, parâmetros, resposta e campos. Só depois use `verified: true` com `evidence` explicando a validação.
+5. Autentique a conexão e faça primeiro uma consulta. Um HTML de login com HTTP 200 não é aceito como sucesso.
+6. Habilite alterações individualmente e teste com uma conta de homologação. A ferramenta NÃO testa operações com custo automaticamente.
+
+## 5. Consultar clientes pela SUA API
+
+Windows CMD (uma linha):
+
+```cmd
+curl --request GET "http://127.0.0.1:48190/api/v1/connections/ID_DA_CONEXAO/clients?start=0&length=50" --header "Authorization: Bearer TOKEN_DA_SUA_API"
+```
+
+Após mapear a renovação, use um arquivo `renovacao.json`:
+
+```json
+{"parameters":{"plan_id":"ID_REAL_DO_PLANO"},"confirmed":true}
+```
+
+```cmd
+curl --request POST "http://127.0.0.1:48190/api/v1/connections/ID_DA_CONEXAO/clients/ID_DO_CLIENTE/renewals" --header "Authorization: Bearer TOKEN_DA_SUA_API" --header "Content-Type: application/json" --header "Idempotency-Key: renovacao-fatura-400" --data-binary "@renovacao.json"
+```
+
+`plan_id` é apenas um exemplo de parâmetro interno; configure a tradução para o contrato real do fornecedor. HTTP 202 significa trabalho registrado, não renovação concluída. Consulte `/api/v1/operations/ID`.
+
+## Desenvolvimento e validação
+
+```sh
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python scripts/smoke_runtime.py
+node frontend/build.mjs --check
+```
+
+Node só é necessário para **alterar/recompilar o template Vue**, não para usar a aplicação. Edite `frontend/app.html`, rode `node frontend/build.mjs` e versione `app/static/render.js`.
+
+Referências utilizáveis: `examples/reseller-manager.openapi.json` e `examples/reseller-manager.postman_collection.json` (API própria, não a coleção oficial kOfficePanel). O relatório desta entrega está em `qa-results/report.json`; imagens com dados sintéticos estão em `docs/capturas/`.
+
+Guia completo: [integração](docs/INTEGRACAO.md), [operação](docs/OPERACAO.md), [segurança](docs/SEGURANCA.md), [validação](docs/VALIDACAO.md), [reaproveitamento do modelo](docs/TEMPLATE.md).
+
+Autoria: **Wallace Kleiton — wkarts@gmail.com — WWSoftware’s**. Nome técnico: `reseller-manager`. Nome comercial provisório: **Reseller Manager**. Não foi criado repositório, PR, merge, release ou deploy nesta entrega.

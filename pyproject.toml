@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reseller-manager"
+version = "0.1.0"
+description = "API FastAPI e painel de gestão de revendas com contratos verificáveis"
+requires-python = ">=3.12,<3.14"
+authors = [{name = "Wallace Kleiton", email = "wkarts@gmail.com"}]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["static/*", "static/vendor/*"]
+
+[project.scripts]
+reseller-manager = "app.runtime:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "mode": "offline_visual_synthetic_no_network",
+  "javascript_errors": [],
+  "network_requests": [],
+  "checks": [
+    "actual Vue assets",
+    "login view",
+    "local interaction with mocked fetch",
+    "dashboard",
+    "clients",
+    "operation form",
+    "connections",
+    "contracts",
+    "mobile dashboard",
+    "mobile clients",
+    "local OpenAPI rendering"
+  ]
+}

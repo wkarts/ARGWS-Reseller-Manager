@@ -1,0 +1,411 @@
+{
+  "info": {
+    "name": "Reseller Manager 0.1.0 — SUA API, não a API oficial kOfficePanel",
+    "description": "As rotas pertencem à aplicação entregue. Dados do fornecedor são placeholders. Alterações exigem perfil aprovado, confirmed=true e chave única. Não há scripts que leem credenciais nem operações reais executadas automaticamente. Não use Collection Runner para executar a coleção inteira.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:48190"
+    },
+    {
+      "key": "api_token",
+      "value": ""
+    },
+    {
+      "key": "connection_id",
+      "value": ""
+    },
+    {
+      "key": "client_id",
+      "value": ""
+    },
+    {
+      "key": "plan_id",
+      "value": ""
+    },
+    {
+      "key": "operation_id",
+      "value": ""
+    },
+    {
+      "key": "action",
+      "value": "renew_client"
+    },
+    {
+      "key": "idempotency_key",
+      "value": ""
+    },
+    {
+      "key": "payment_reference",
+      "value": ""
+    },
+    {
+      "key": "panel_username",
+      "value": ""
+    },
+    {
+      "key": "panel_password",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Meu token da API própria",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/me"
+      }
+    },
+    {
+      "name": "Listar conexões",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections"
+      }
+    },
+    {
+      "name": "Cadastrar conexão — configure o perfil antes de autenticar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Minha revenda\",\n  \"base_url\": \"https://servip2p.com\",\n  \"auth_mode\": \"form\",\n  \"credentials\": {\n    \"username\": \"{{panel_username}}\",\n    \"password\": \"{{panel_password}}\"\n  },\n  \"profile\": {\n    \"name\": \"kOfficePanel v4.6.9 PREMIUM — Servip2P (observado, não homologado)\",\n    \"token_auth\": {\n      \"location\": \"header\",\n      \"name\": \"\",\n      \"prefix\": \"\"\n    },\n    \"login\": {\n      \"page\": \"/login/\",\n      \"username_field\": \"\",\n      \"password_field\": \"\",\n      \"form_selector\": \"form\",\n      \"username_selector\": \"input[name=\\\"username\\\"]\",\n      \"password_selector\": \"input[type=\\\"password\\\"]\",\n      \"submit_selector\": \"button[type=\\\"submit\\\"], input[type=\\\"submit\\\"]\",\n      \"success_selector\": \"\",\n      \"extra_fields\": {}\n    },\n    \"endpoints\": {\n      \"list_clients\": {\n        \"method\": \"GET\",\n        \"path\": \"/clients/api/?get_clients\",\n        \"encoding\": \"query\",\n        \"params\": {},\n        \"body\": {},\n        \"headers\": {\n          \"Accept\": \"application/json\"\n        },\n        \"required\": [],\n        \"verified\": false,\n        \"evidence\": \"Apenas URL e resposta DataTables observadas nas capturas do usuário. GET é candidato NÃO confirmado; nomes dos campos, autenticação e paginação ainda precisam de evidência.\",\n        \"data_path\": \"data\",\n        \"fields\": {},\n        \"success_path\": null,\n        \"success_value\": true,\n        \"success_status\": [\n          200,\n          201\n        ]\n      }\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Consultar conexão e perfil (admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}"
+      }
+    },
+    {
+      "name": "Inspecionar formulário sem login",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/login-form"
+      }
+    },
+    {
+      "name": "Capacidades validadas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/capabilities"
+      }
+    },
+    {
+      "name": "Autenticar conexão conforme perfil",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/connect"
+      }
+    },
+    {
+      "name": "Listar clientes no painel",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/clients?start=0&length=50&search="
+      }
+    },
+    {
+      "name": "Listar cache local (não consulta o painel)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/clients?start=0&length=50&cached=true"
+      }
+    },
+    {
+      "name": "Consultar cliente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/clients/{{client_id}}"
+      }
+    },
+    {
+      "name": "Consultar planos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/queries/list_plans",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Consultar saldo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/queries/get_balance",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Renovar cliente — desabilitado até configurar perfil e confirmar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/clients/{{client_id}}/renewals",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"parameters\": {\n    \"plan_id\": \"{{plan_id}}\"\n  },\n  \"confirmed\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Alteração genérica — contrato precisa ser validado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/operations/{{action}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"parameters\": {},\n  \"confirmed\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Operações recentes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/operations"
+      }
+    },
+    {
+      "name": "Resultado da operação",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/operations/{{operation_id}}"
+      }
+    },
+    {
+      "name": "Cancelar somente enquanto na fila",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/operations/{{operation_id}}/cancel"
+      }
+    },
+    {
+      "name": "Eventos após cursor",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/events?after=0"
+      }
+    },
+    {
+      "name": "Agendamentos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/schedules"
+      }
+    },
+    {
+      "name": "Pagamento confirmado pelo ERP — não é callback de banco",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/connections/{{connection_id}}/payments/confirmed",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reference\": \"{{payment_reference}}\",\n  \"client_id\": \"{{client_id}}\",\n  \"parameters\": {\n    \"plan_id\": \"{{plan_id}}\"\n  },\n  \"confirmed\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
