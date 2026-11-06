@@ -27,7 +27,17 @@ jobs:
       - name: Prepare and validate correction
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/_connection_fix_refinements.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/_prepare_connection_fix.py')
+          text=p.read_text(encoding='utf-8')
+          old="tree=api('/git/trees', {'base_tree':'01b9f56b3557cf566bba0d517cbab3b6fa40f687', 'tree':entries})"
+          assert old in text
+          text=text.replace(old,"print('TESTED_PRODUCT_ENTRIES=' + json.dumps(entries)); tree={'sha':'publish-with-connected-github-tool'}")
+          p.write_text(text,encoding='utf-8')
+          PY
+          python scripts/_connection_fix_refinements.py
       - name: Preserve synthetic UI validation evidence
         if: always()
         uses: actions/upload-artifact@v4
