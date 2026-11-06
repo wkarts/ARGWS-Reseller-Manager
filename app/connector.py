@@ -269,10 +269,10 @@ class Connector:
         return {"status": "authenticated", "probe": result}
 
     async def browser_login(self, identifier):
-        if not self.settings.browser_enabled: raise BridgeError("browser_disabled", "Habilite RESMAN_BROWSER_ENABLED e instale o Chromium do Playwright.", 409)
+        if not self.settings.browser_enabled: raise BridgeError("browser_disabled", "Autenticação por navegador desabilitada nesta instância.", 409)
         try:
             from playwright.async_api import async_playwright, Error as PlaywrightError
-        except ImportError as exc: raise BridgeError("browser_unavailable", "Playwright não instalado neste pacote.", 503) from exc
+        except ImportError as exc: raise BridgeError("browser_unavailable", "Pacote incompleto: motor de navegador integrado ausente. Reinstale a distribuição completa.", 503) from exc
         async with self.lock(identifier):
             c = self.store.connection(identifier, True)
             p = Profile.model_validate(c["profile"])
@@ -281,7 +281,8 @@ class Connector:
             await self.policy.validate(url)
             try:
                 async with async_playwright() as pw:
-                    browser = await pw.chromium.launch(headless=self.settings.browser_headless)
+                    from .browser_support import launch_browser
+                    browser = await launch_browser(pw, headless=self.settings.browser_headless)
                     try:
                         context = await browser.new_context(accept_downloads=False, service_workers="block")
                         # Restrict every network request made by the login browser.

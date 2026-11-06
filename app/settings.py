@@ -14,7 +14,9 @@ class Settings:
     worker_enabled: bool = True
     request_timeout: float = 30.0
     max_upstream_bytes: int = 8 * 1024 * 1024
-    browser_enabled: bool = field(default_factory=lambda: os.getenv("RESMAN_BROWSER_ENABLED", "0") == "1")
+    # All distributions include Chromium. Ignore the obsolete opt-in environment
+    # variable, including RESMAN_BROWSER_ENABLED=0 from previous .env templates.
+    browser_enabled: bool = True
     browser_headless: bool = field(default_factory=lambda: os.getenv("RESMAN_BROWSER_HEADLESS", "1") != "0")
     # Dependency injection only in tests, never enabled by an environment variable.
     test_network: bool = False

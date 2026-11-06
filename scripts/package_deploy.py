@@ -20,14 +20,14 @@ def build_package(output: Path, image: str, browser: bool = False, source_sha: s
         raise ValueError("VERSION inválido.")
     env = (ROOT / "deploy/.env.example").read_text(encoding="utf-8")
     env = re.sub(r"^RESMAN_IMAGE=.*$", "RESMAN_IMAGE=" + image, env, flags=re.MULTILINE)
-    env = re.sub(r"^RESMAN_BROWSER_ENABLED=.*$", "RESMAN_BROWSER_ENABLED=" + str(int(browser)), env, flags=re.MULTILINE)
+    env = re.sub(r"^RESMAN_BROWSER_ENABLED=.*$", "RESMAN_BROWSER_ENABLED=1", env, flags=re.MULTILINE)
     files = {
         "compose.yaml": (ROOT / "deploy/compose.yaml").read_bytes(),
         ".env": env.encode("utf-8"),
         ".env.example": env.encode("utf-8"),
         "README.md": (ROOT / "deploy/README.md").read_bytes(),
         "deployment.json": (json.dumps({"version": version, "image": image,
-            "browser": browser, "source_sha": source_sha,
+            "browser": True, "compatibility_alias": browser, "source_sha": source_sha,
             "note": "A criação do pacote não comprova a publicação da imagem nem a homologação do fornecedor."},
             ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
     }

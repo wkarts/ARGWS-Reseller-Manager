@@ -73,7 +73,7 @@ Para este repositório, a imagem é `ghcr.io/wkarts/argws-reseller-manager`.
 | `develop` | branch develop, após testes |
 | `0.1.0` | tag Git `v0.1.0`, com VERSION correspondente |
 | `sha-<12 caracteres>` | referência do commit efetivamente compilado |
-| `latest-browser`, `develop-browser`, `0.1.0-browser` | variante com Chromium |
+| `latest-browser`, `develop-browser`, `0.1.0-browser` | aliases de compatibilidade; a imagem padrão também inclui Chromium |
 
 Builds prerelease não atualizam `latest`. Pull requests geram validações e artefatos,
 mas **não publicam imagens**. Os pacotes de deploy gerados em PR podem referenciar
@@ -81,9 +81,7 @@ uma imagem ainda não publicada; não os trate como deploy de produção dispon�
 Para reproduzir uma instalação, prefira uma tag de versão ou digest já publicado.
 `latest` e `develop` são canais móveis.
 
-Para login pelo navegador, use a imagem com sufixo `-browser` e configure
-`RESMAN_BROWSER_ENABLED=1`. A imagem padrão mantém autenticação HTTP/formulário/token,
-sem carregar Chromium. As duas variantes mantêm a mesma API e o mesmo banco.
+Playwright, Chromium e bibliotecas Linux já estão incluídos na imagem padrão. Não é necessário selecionar outra variante, instalar pacotes nem configurar `RESMAN_BROWSER_ENABLED`. A variável legada é ignorada, inclusive quando um `.env` anterior contém valor 0. Não há download de navegador durante a inicialização.
 O browser é headless no Docker; desafios que exigem interação precisam ser tratados
 pelo fluxo autorizado, nunca contornados automaticamente.
 
@@ -126,14 +124,14 @@ mantêm dados independentes e não devem compartilhar um SQLite simultaneamente.
 
 O executável Windows e os ZIPs de deploy ficam em **Actions → Validate → Artifacts**,
 depois que os respectivos jobs passam. Os workflows também podem ser executados
-manualmente. Não há criação automática de release GitHub nesta correção.
+manualmente. Após push/merge em `main` (ou tag `vVERSION`), a release é publicada automaticamente somente depois de todos os testes e builds nativos. Os ZIPs e checksums ficam também em **Releases**. A release inicial usa VERSION=0.1.0; novas versões exigem incremento explícito de VERSION, sem substituir releases anteriores.
 
 ## Limites de validação
 
 Existência do compose/workflow não comprova uma imagem publicada nem um binário gerado.
 O CI prepara teste real da imagem, persistência após recriação, usuário não-root e,
-na variante browser, abertura de Chromium sem conectar ao fornecedor. O Windows
-valida o PE x64 e a API do executável nativo. Consulte os resultados da execução.
+em ambas as tags, abertura de Chromium sem conectar ao fornecedor. O Windows
+valida PE x64, API e Chromium a partir do executável nativo, fora da pasta-fonte e com cache externo vazio. Consulte os resultados da execução.
 A homologação dos endpoints reais do kOfficePanel continua separada.
 
 Referências de operação: documentação oficial de [Docker Compose](https://docs.docker.com/compose/),

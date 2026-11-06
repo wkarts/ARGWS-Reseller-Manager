@@ -7,3 +7,5 @@ cryptography==46.0.4
 pydantic==2.13.5
 beautifulsoup4==4.14.3
 websockets==16.0
+# Browser authentication is part of every distribution, not an optional extra.
+playwright==1.57.0
