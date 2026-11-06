@@ -79,6 +79,29 @@ def test_browser_launch_error_is_not_reported_as_a_login_error(tmp_path):
     assert exc.value.code == "browser_unavailable"
 
 
+@pytest.mark.parametrize("headless", [True, False])
+def test_launcher_selects_full_chromium_not_headless_shell(tmp_path, headless):
+    executable = tmp_path / "chrome.exe"
+    executable.touch()
+    calls = []
+
+    async def launcher(**options):
+        calls.append(options)
+        return object()
+
+    fake = SimpleNamespace(chromium=SimpleNamespace(
+        executable_path=str(executable), launch=launcher))
+    asyncio.run(launch_browser(fake, headless=headless))
+    assert calls == [{"channel": "chromium", "headless": headless}]
+
+
+def test_windows_smoke_checks_full_chromium_channel():
+    support = (ROOT / "app/browser_support.py").read_text()
+    smoke = (ROOT / "scripts/smoke_browser.py").read_text()
+    assert 'channel="chromium"' in support
+    assert 'result["browser_channel"] == "chromium"' in smoke
+
+
 def test_all_container_targets_include_chromium():
     dockerfile = (ROOT / "Dockerfile").read_text()
     runtime, alias = dockerfile.split("FROM runtime AS browser")

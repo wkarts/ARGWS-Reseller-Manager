@@ -27,6 +27,7 @@ def main() -> None:
         if completed.returncode or result.get("status") != "ok" or result.get("frozen") is not True:
             raise RuntimeError("Integrated browser self-test failed: " + json.dumps(result))
         assert result["engine"] == "chromium" and result["network"] == "offline"
+        assert result["browser_channel"] == "chromium", "Não usar Headless Shell"
         print("BROWSER SMOKE PASSED: frozen executable, bundled Chromium, empty cache, offline render")
 
 

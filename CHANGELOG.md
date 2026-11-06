@@ -2,6 +2,10 @@
 
 ## 0.1.4
 
+- Corrigida falha de Chromium Headless Shell (`SIGSEGV`) no smoke Docker: modo headless passa a usar o Chromium completo integrado por `channel="chromium"`.
+- Validação do canal nos testes de regressão e no binário Windows, mantendo Docker/Dockge, segurança, interface e recursos de dry-run inalterados.
+
+
 - Auditoria passiva do kOfficePanel a partir das abas de clientes autenticadas já abertas: inventário das áreas de clientes IPTV/P2P, revendedores, créditos e logs, sem navegação automatizada adicional.
 - Tela local `/audit` e endpoints de dry-run para matriz e pré-validação de todas as 20 ações; nenhuma chamada remota, crédito debitado, fila ou agendamento.
 - Respostas sempre marcadas como `NOT_EXECUTED`, com pendências de parâmetros e homologação. Sem expor credenciais, URLs do fornecedor ou valores submetidos.
