@@ -87,6 +87,32 @@
     }catch(e){message.textContent=e.message;}
     finally{btns.forEach(x=>x.disabled=false);}
   }
+  let sanitized = null;
+  $('evidence-inspect').addEventListener('click',async()=>{
+    const file=$('evidence-file').files?.[0];
+    if(!file){message.textContent='Selecione um arquivo.';return;}
+    if(!selector.value){message.textContent='Selecione uma conexão.';return;}
+    if(file.size>2*1024*1024){message.textContent='Arquivo maior que 2 MiB.';return;}
+    const btn=$('evidence-inspect');btn.disabled=true;message.textContent='';
+    try{
+      const format=$('evidence-format').value,raw=await file.text();
+      const document=format==='html'?raw:JSON.parse(raw);
+      sanitized=await call('/api/v1/connections/'+encodeURIComponent(selector.value)+'/audit/inspect',{
+        method:'POST',body:JSON.stringify({format,document})});
+      $('evidence-output').textContent=JSON.stringify(sanitized,null,2);
+      $('evidence-export').disabled=false;
+    }catch(e){sanitized=null;$('evidence-export').disabled=true;message.textContent=e.message;}
+    finally{btn.disabled=false;}
+  });
+  $('evidence-export').addEventListener('click',()=>{
+    if(!sanitized)return;
+    const blob=new Blob([JSON.stringify(sanitized,null,2)+'\n'],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='koffice-evidencias-sanitizadas.json';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
+  $('evidence-editor').addEventListener('click',()=>location.assign('/#contracts'));
+
   $('simulate').addEventListener('click',()=>execute(false));
   $('matrix').addEventListener('click',()=>execute(true));
   load();

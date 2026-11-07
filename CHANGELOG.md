@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5
+
+- Inspeção offline de HTML, HAR e Postman na auditoria local: coleta caminhos, métodos, nomes de campos e alertas de possíveis efeitos sem executar tráfego ao fornecedor.
+- Exportação de inventário sanitizado e link ao editor manual de contratos; nenhuma ação remota é promovida a verificada automaticamente.
+- Testes de redaction, isolamento de origem, permissão de administrador e ausência de execução/compras.
+- Mantém login, dry-run, Docker/Dockge, GHCR, Windows e Chromium integrado.
+
+
 ## 0.1.4
 
 - Corrigida falha de Chromium Headless Shell (`SIGSEGV`) no smoke Docker: modo headless passa a usar o Chromium completo integrado por `channel="chromium"`.
