@@ -12,7 +12,7 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
           _createElementVNode("h1", null, [_createTextVNode("Conecte. Gerencie."), _createElementVNode("br"), _createTextVNode("Renove com controle.")]),
           _createElementVNode("p", null, "Uma API própria para integrar sua carteira, organizar renovações e acompanhar cada operação."),
           _createElementVNode("div", { class: "auth-feature" }, "Sessões protegidas · Histórico persistente · Contratos verificáveis")
-        ]), _createElementVNode("footer", null, "WWSoftware’s · Wallace Kleiton · v0.1.4")]), _createElementVNode("section", { class: "auth-panel" }, [_createElementVNode("form", {
+        ]), _createElementVNode("footer", null, "WWSoftware’s · Wallace Kleiton · v0.1.5")]), _createElementVNode("section", { class: "auth-panel" }, [_createElementVNode("form", {
           class: "auth-form",
           onSubmit: _withModifiers(login, ["prevent"])
         }, [
@@ -74,7 +74,7 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
             _createElementVNode("span", { class: _normalizeClass(['signal',socketOnline?'online':'']) }, null, 2),
             _createTextVNode(_toDisplayString(socketOnline?'Eventos em tempo real':'Reconectando eventos'), 1),
             _createElementVNode("br"),
-            _createElementVNode("small", null, "v0.1.4 · " + _toDisplayString(user.scope), 1)
+            _createElementVNode("small", null, "v0.1.5 · " + _toDisplayString(user.scope), 1)
           ])
         ]), _createElementVNode("div", { class: "sidebar-footer" }, [_createElementVNode("span", null, "WWSoftware’s"), _createElementVNode("small", null, "Integrações sob seu controle")])], 2), _createElementVNode("div", { class: "main-area" }, [_createElementVNode("header", { class: "topbar" }, [_createElementVNode("div", { class: "actions" }, [_createElementVNode("button", {
           class: "icon-button mobile-menu",
@@ -922,7 +922,7 @@ var _Vue=Vue;var ResellerRender=function render(_ctx, _cache) {
               _createElementVNode("code", null, "docs/TEMPLATE.md")
             ])
           ], 512), [[_vShow, page==='documentation']]),
-          _createElementVNode("footer", { class: "content-footer" }, [_createElementVNode("span", null, "Reseller Manager · v0.1.4"), _createElementVNode("span", null, "Wallace Kleiton — WWSoftware’s")])
+          _createElementVNode("footer", { class: "content-footer" }, [_createElementVNode("span", null, "Reseller Manager · v0.1.5"), _createElementVNode("span", null, "Wallace Kleiton — WWSoftware’s")])
         ])])]))]))
   }
 };

@@ -1,4 +1,4 @@
-# Reseller Manager — 0.1.4
+# Reseller Manager — 0.1.5
 
 Ferramenta própria de revendas em **Python/FastAPI**, adaptada do modelo `escrituracao-contabil-0.3.0-dev.9.1.zip` fornecido por Wallace. Painel web Vue local, API REST, eventos WebSocket, fila persistente SQLite, credenciais criptografadas, execução Docker e projeto de executável gráfico Windows x64.
 
@@ -161,3 +161,8 @@ Autoria: **Wallace Kleiton — wkarts@gmail.com — WWSoftware’s**. Nome técn
 
 Após entrar no painel, abra **Auditoria e dry-run** no menu ou acesse `/audit` na mesma instalação.
 A matriz e as simulações são executadas exclusivamente na API local e **não geram requisições ao fornecedor**, créditos, alterações ou agendamentos. Consulte `docs/KOFFICE-AUDITORIA-PASSIVA.md` para o inventário já observado e os limites da auditoria.
+
+
+## Importar evidências da integração sem executar operações
+
+Em `/audit`, importe HTML salvo, HAR sanitizado ou Postman JSON de até 2 MiB. A API local identifica rotas, métodos, campos e possíveis ações com efeito colateral; descarta valores e não usa rede, filas ou banco de dados para essa análise. Todas as sugestões continuam sem homologação; use o editor de contratos para revisar e salvar apenas o que possui evidência real.

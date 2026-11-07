@@ -35,6 +35,17 @@
     <pre id="output" tabindex="0">Selecione uma conexão e execute a simulação local.</pre>
   </section>
   <section class="panel">
+    <h2>Coletar evidências sem executar requisições</h2>
+    <p class="muted">Importe arquivos HTML, HAR sanitizado ou Postman JSON. Nenhuma requisição contida nos arquivos será executada ou reaplicada.</p>
+    <label>Formato<select id="evidence-format"><option value="har">HAR sanitizado</option><option value="html">HTML salvo</option><option value="postman">Postman Collection JSON</option></select></label>
+    <label>Arquivo<input id="evidence-file" type="file" accept=".har,.html,.htm,.json"></label>
+    <div class="buttons"><button id="evidence-inspect">Inspecionar offline</button>
+      <button id="evidence-export" class="secondary" disabled>Exportar inventário sanitizado</button>
+      <button id="evidence-editor" class="secondary">Editar contratos</button></div>
+    <p class="note">Máximo 2 MiB. Remova cookies, tokens e dados de clientes antes de exportar HAR. A aplicação mostra só caminhos, métodos e nomes de campos; jamais promove um contrato automaticamente.</p>
+    <pre id="evidence-output" tabindex="0">Nenhuma evidência importada.</pre>
+  </section>
+  <section class="panel">
     <h2>Inventário observado na sessão autenticada</h2>
     <p class="muted">Referências de navegação extraídas das abas de clientes do kOfficePanel 4.6.9 PREMIUM. São páginas da interface, não endpoints de integração confirmados. Nenhuma dessas rotas será chamada automaticamente.</p>
     <div class="observed" id="observed"></div>

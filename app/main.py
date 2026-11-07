@@ -22,6 +22,7 @@ from .security import InstanceLock
 from .connector import Connector
 from .worker import Worker
 from .importers import inspect_document
+from .offline_audit import EvidenceRequest, inspect_offline
 from .dry_run import DryRunRequest, preview as dry_run_preview, matrix as dry_run_matrix
 
 STATIC = Path(__file__).resolve().parent / "static"
@@ -223,6 +224,12 @@ def create_app(settings: Settings | None = None, transport=None):
     async def dry_run_one(connection_id: str, action: str, request: DryRunRequest, p=Depends(principal)):
         c = connection_access(connection_id, p, "admin", True)
         return dry_run_preview(c, action, request.parameters)
+
+    @app.post("/api/v1/connections/{connection_id}/audit/inspect", tags=["Auditoria offline"])
+    async def evidence_inspect(connection_id: str, payload: EvidenceRequest, p=Depends(principal)):
+        # Parses the supplied file in memory, without calling any supplier.
+        connection = connection_access(connection_id, p, "admin")
+        return inspect_offline(payload, connection["base_url"])
 
     @app.post("/api/v1/contracts/inspect", tags=["Contratos"])
     async def contracts_inspect(document: dict, p=Depends(principal)):
